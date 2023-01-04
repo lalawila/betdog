@@ -17,6 +17,8 @@ interface IBetNFT {
         uint256 reward;
     }
 
+    function lastTokenId() external view returns (uint256);
+
     function bets(
         uint256 tokenId
     )

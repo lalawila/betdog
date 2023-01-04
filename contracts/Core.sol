@@ -25,7 +25,7 @@ contract Core is Ownable, ICore {
     IBetNFT public betNFT;
     ILiquidityPoolERC20 public pool;
 
-    uint256 lastConditionId;
+    uint256 public override lastConditionId;
 
     uint256 constant minValueOfLiquidity = 100 ether;
 
@@ -79,14 +79,14 @@ contract Core is Ownable, ICore {
 
     function bet(
         uint256 conditionId,
-        uint64 outcomeIndex,
+        uint64 betIndex,
         uint256 amount
     ) public override returns (uint256 tokenId) {
         IERC20(pool.token()).safeTransferFrom(msg.sender, address(pool), amount);
 
-        uint256 reward = conditions[conditionId].addReserve(outcomeIndex, amount);
+        uint256 reward = conditions[conditionId].addReserve(betIndex, amount);
 
-        tokenId = betNFT.mint(msg.sender, conditionId, outcomeIndex, amount, reward);
+        tokenId = betNFT.mint(msg.sender, conditionId, betIndex, amount, reward);
     }
 
     function resolveBet(uint256 tokenId) external {

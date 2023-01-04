@@ -8,6 +8,8 @@ interface ICore {
     error MustSame();
     error MustBeOracle();
 
+    function lastConditionId() external view returns (uint256);
+
     function getCondition(
         uint256 conditionId
     ) external view returns (Condition.Info memory conditionInfo);

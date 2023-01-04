@@ -34,7 +34,7 @@ library Condition {
             totalOdds += multiplier ** 2 / oddsList[i];
         }
 
-        require(totalOdds <= multiplier, "total odds must less than 1");
+        require(totalOdds < multiplier + 1e7, "total odds must less than 1");
 
         require(endTime > startTime, "endTime must be greater than startTime");
 
