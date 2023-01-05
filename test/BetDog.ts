@@ -43,15 +43,13 @@ async function deployContracts() {
 }
 
 async function testBetting(oddsList: number[], betIndex: number) {
-    const { token, core, pool, bet, oracle, maker, better, startTime, endTime } = await loadFixture(
-        deployContracts,
-    )
+    const { token, core, pool, bet, oracle, maker, better, startTime, endTime } = await loadFixture(deployContracts)
 
     const amount = ethers.utils.parseEther("200")
     await token.connect(maker).approve(pool.address, amount)
     await pool.connect(maker).addLiquidity(amount)
 
-    const valueOfLiquidity = (await pool.totalTokenValue()).div(2)
+    const valueOfLiquidity = (await pool.totalValue()).div(2)
 
     const multiplier = 1e9
 
@@ -73,14 +71,10 @@ async function testBetting(oddsList: number[], betIndex: number) {
     token.connect(better).approve(core.address, betAmount)
 
     console.log("before reserves:", (await core.getCondition(conditionId)).reserves)
-    const beforeSumReserves = (await core.getCondition(conditionId)).reserves.reduce((a, b) =>
-        a.add(b),
-    )
+    const beforeSumReserves = (await core.getCondition(conditionId)).reserves.reduce((a, b) => a.add(b))
     console.log("before sum of reserves:", beforeSumReserves)
 
-    await expect(core.connect(better).bet(conditionId, betIndex, betAmount))
-        .to.emit(bet, "MintedBet")
-        .withArgs(tokenId)
+    await expect(core.connect(better).bet(conditionId, betIndex, betAmount)).to.emit(bet, "MintedBet").withArgs(tokenId)
 
     const reward = (await bet.getBet(tokenId)).reward
 
@@ -89,18 +83,13 @@ async function testBetting(oddsList: number[], betIndex: number) {
     console.log("after reserves:", (await core.getCondition(conditionId)).reserves)
 
     // console.log("reserves:", (await core.getCondition(conditionId)).reserves)
-    const afterSumReserves = (await core.getCondition(conditionId)).reserves.reduce((a, b) =>
-        a.add(b),
-    )
+    const afterSumReserves = (await core.getCondition(conditionId)).reserves.reduce((a, b) => a.add(b))
     console.log("after sum of reserves:", afterSumReserves)
 
     console.log("before and bet amount:", beforeSumReserves.add(betAmount))
     console.log("after and reward:", afterSumReserves.add(reward))
 
-    console.log(
-        "real odds:",
-        reward.add(betAmount).mul(multiplier).div(betAmount).toNumber() / multiplier,
-    )
+    console.log("real odds:", reward.add(betAmount).mul(multiplier).div(betAmount).toNumber() / multiplier)
 
     await time.increaseTo(endTime)
 
@@ -131,41 +120,26 @@ describe("BetDog", function () {
         it("Should fail if not oracle call", async function () {
             const { core, startTime, endTime, pool } = await loadFixture(deployContracts)
 
-            const valueOfLiquidity = (await pool.totalTokenValue()).div(2)
+            const valueOfLiquidity = (await pool.totalValue()).div(2)
 
             const multiplier = 1e9
 
             await expect(
-                core.createCondition(
-                    [5 * multiplier, 1.25 * multiplier],
-                    valueOfLiquidity,
-                    startTime,
-                    endTime,
-                ),
+                core.createCondition([5 * multiplier, 1.25 * multiplier], valueOfLiquidity, startTime, endTime),
             ).to.be.revertedWithCustomError(core, "MustBeOracle")
         })
         it("Create condition", async function () {
-            const { core, oracle, startTime, endTime, pool, token, maker } = await loadFixture(
-                deployContracts,
-            )
+            const { core, oracle, startTime, endTime, pool, token, maker } = await loadFixture(deployContracts)
             const multiplier = 1e9
 
             const amount = ethers.utils.parseEther("200")
             await token.connect(maker).approve(pool.address, amount)
             await pool.connect(maker).addLiquidity(amount)
 
-            const valueOfLiquidity = (await pool.totalTokenValue()).div(2)
+            const valueOfLiquidity = (await pool.totalValue()).div(2)
 
-            await expect(
-                core
-                    .connect(oracle)
-                    .createCondition(
-                        [5 * multiplier, 1.25 * multiplier],
-                        valueOfLiquidity,
-                        startTime,
-                        endTime,
-                    ),
-            ).not.to.be.reverted
+            await expect(core.connect(oracle).createCondition([5 * multiplier, 1.25 * multiplier], valueOfLiquidity, startTime, endTime))
+                .not.to.be.reverted
         })
     })
     describe("Betting", function () {

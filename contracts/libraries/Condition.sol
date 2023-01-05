@@ -5,6 +5,7 @@ import "hardhat/console.sol";
 
 library Condition {
     uint256 constant multiplier = 1e9;
+    uint256 constant fee = 5e6;
 
     enum ConditionState {
         CREATED,
@@ -34,7 +35,7 @@ library Condition {
             totalOdds += multiplier ** 2 / oddsList[i];
         }
 
-        require(totalOdds < multiplier + 1e7, "total odds must less than 1");
+        require(totalOdds >= multiplier, "total odds must greater than or equal to 1");
 
         require(endTime > startTime, "endTime must be greater than startTime");
 
@@ -45,11 +46,7 @@ library Condition {
         self.lockedValue = valueOfLiquidity;
     }
 
-    function addReserve(
-        Condition.Info storage self,
-        uint64 betIndex,
-        uint256 amount
-    ) internal returns (uint256 reward) {
+    function addReserve(Condition.Info storage self, uint64 betIndex, uint256 amount) internal returns (uint256 reward) {
         uint256 total = totalReserves(self);
         uint256 anothersReserves = total - self.reserves[betIndex];
 
@@ -59,6 +56,8 @@ library Condition {
 
         uint256 afterAnothers = k / self.reserves[betIndex];
         reward = anothersReserves - afterAnothers;
+
+        reward = (reward * (multiplier - fee)) / multiplier;
 
         uint256 ratio = (multiplier * afterAnothers) / anothersReserves;
 
@@ -75,10 +74,7 @@ library Condition {
         }
     }
 
-    function calcReserve(
-        uint64[] calldata oddsList,
-        uint256 valueOfLiquidity
-    ) internal pure returns (uint256[] memory reserves) {
+    function calcReserve(uint64[] calldata oddsList, uint256 valueOfLiquidity) internal pure returns (uint256[] memory reserves) {
         reserves = new uint256[](oddsList.length);
 
         for (uint64 i = 0; i < oddsList.length; i++) {
