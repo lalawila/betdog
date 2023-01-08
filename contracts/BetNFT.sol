@@ -13,8 +13,9 @@ contract BetNFT is ERC721, IBetNFT, OnlyCoreCall {
 
     mapping(uint256 => IBetNFT.Info) public override bets;
 
-    // Last minted token ID
+    /// @inheritdoc IBetNFT
     uint256 public override lastTokenId;
+
     uint64 constant multiplier = 1e9;
 
     constructor(address core_) ERC721("Bet NFT", "BETNFT") OnlyCoreCall(core_) {}

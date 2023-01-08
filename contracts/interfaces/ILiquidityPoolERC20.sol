@@ -11,9 +11,13 @@ interface ILiquidityPoolERC20 {
 
     function lockedValue() external returns (uint256);
 
-    function addLiquidity(uint256 liquidity) external;
+    /// @notice Adds liquidity for the given amount
+    /// @param amount The amount of liquidity to mint
+    function addLiquidity(uint256 amount) external;
 
-    function removeLiquidity(uint256 liquidity) external;
+    /// @notice Remove liquidity for the given amount
+    /// @param amount The amount of liquidity to burn
+    function removeLiquidity(uint256 amount) external;
 
     function pay(address account, uint256 amount) external;
 

@@ -21,36 +21,36 @@ contract LiquidityPoolERC20 is ILiquidityPoolERC20, ERC20, OnlyCoreCall {
         token = token_;
     }
 
-    function addLiquidity(uint256 liquidity) external override {
-        uint256 value = _addLiquidity(liquidity);
+    function addLiquidity(uint256 amount) external override {
+        uint256 value = _addLiquidity(amount);
 
         IERC20(token).safeTransferFrom(msg.sender, address(this), value);
     }
 
-    function _addLiquidity(uint256 liquidity) private returns (uint256 value) {
+    function _addLiquidity(uint256 amount) private returns (uint256 value) {
         uint256 currentSupply = totalSupply();
 
         if (currentSupply == 0) {
-            value = liquidity;
+            value = amount;
         } else {
-            value = (liquidity * totalValue()) / currentSupply;
+            value = (amount * totalValue()) / currentSupply;
         }
 
-        _mint(msg.sender, liquidity);
+        _mint(msg.sender, amount);
     }
 
-    function removeLiquidity(uint256 liquidity) external override {
-        uint256 value = _removeLiquidity(liquidity);
+    function removeLiquidity(uint256 amount) external override {
+        uint256 value = _removeLiquidity(amount);
 
         IERC20(token).safeTransfer(msg.sender, value);
     }
 
-    function _removeLiquidity(uint256 liquidity) private returns (uint256 value) {
-        require(liquidity <= balanceOf(msg.sender), "liquidity influences");
+    function _removeLiquidity(uint256 amount) private returns (uint256 value) {
+        require(amount <= balanceOf(msg.sender), "liquidity influences");
 
-        value = (liquidity * totalValue()) / totalSupply();
+        value = (amount * totalValue()) / totalSupply();
 
-        _burn(msg.sender, liquidity);
+        _burn(msg.sender, amount);
     }
 
     function pay(address account, uint256 amount) external override onlyCore {

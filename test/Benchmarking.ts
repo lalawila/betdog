@@ -91,9 +91,8 @@ describe("Benchmarking", async function () {
 
             for (let i = 0; i < times; i++) {
                 const len = ranInt(2, 10)
-                // const len = 5
 
-                const { oddsList, rightIndx } = randomOddsList(len)
+                const { oddsList, rightIndex } = randomOddsList(len)
 
                 console.log(oddsList)
 
@@ -105,7 +104,7 @@ describe("Benchmarking", async function () {
 
                 let sumBetAmount = ethers.utils.parseEther("0")
 
-                let i = 0
+                // let i = 0
                 for (const better of betters) {
                     const betAmount = ethers.utils.parseEther("1")
                     sumBetAmount = sumBetAmount.add(betAmount)
@@ -135,7 +134,7 @@ describe("Benchmarking", async function () {
                 timestamp += ONE_HOUR_IN_SECS
                 await time.increaseTo(timestamp)
 
-                await core.connect(oracle).resolveCondition(conditionId, rightIndx)
+                await core.connect(oracle).resolveCondition(conditionId, rightIndex)
 
                 for (const idx in betters) {
                     // 获得奖金
