@@ -27,7 +27,7 @@ contract Core is Ownable, ICore {
 
     uint256 public override lastConditionId;
 
-    uint256 constant minValueOfLiquidity = 100 ether;
+    uint256 constant minReserve = 100 ether;
 
     modifier onlyOracle() {
         if (oracle != msg.sender) revert MustBeOracle();
@@ -46,27 +46,27 @@ contract Core is Ownable, ICore {
         betNFT = IBetNFT(bet_);
     }
 
-    function getCondition(
-        uint256 conditionId
-    ) external view returns (Condition.Info memory conditionInfo) {
+    function getCondition(uint256 conditionId) external view returns (Condition.Info memory conditionInfo) {
         return conditions[conditionId];
     }
 
+    /// @inheritdoc ICore
     function createCondition(
         uint64[] calldata oddsList,
-        uint256 valueOfLiquidity,
+        uint256 reserve,
         uint64 startTime,
-        uint64 endTime
+        uint64 endTime,
+        bytes32 ipfsHash
     ) external onlyOracle returns (uint256) {
-        require(valueOfLiquidity >= minValueOfLiquidity, "must be at least minValueOfLiquidity");
+        require(reserve >= minReserve, "must be at least min reserve");
 
-        pool.lockValue(valueOfLiquidity);
+        pool.lockValue(reserve);
 
         lastConditionId++;
 
         Condition.Info storage conditionInfo = conditions[lastConditionId];
 
-        conditionInfo.createCondition(oddsList, valueOfLiquidity, startTime, endTime);
+        conditionInfo.createCondition(oddsList, reserve, startTime, endTime, ipfsHash);
 
         emit CreatedCondition(lastConditionId);
         return lastConditionId;
@@ -74,14 +74,10 @@ contract Core is Ownable, ICore {
 
     function resolveCondition(uint256 conditionId, uint64 outcomeWinIndex) external onlyOracle {
         conditions[conditionId].resolveCondition(outcomeWinIndex);
-        pool.releaseValue(conditions[conditionId].lockedValue);
+        pool.releaseValue(conditions[conditionId].reserve);
     }
 
-    function bet(
-        uint256 conditionId,
-        uint64 betIndex,
-        uint256 amount
-    ) public override returns (uint256 tokenId) {
+    function bet(uint256 conditionId, uint64 betIndex, uint256 amount) public override returns (uint256 tokenId) {
         IERC20(pool.token()).safeTransferFrom(msg.sender, address(pool), amount);
 
         uint256 reward = conditions[conditionId].addReserve(betIndex, amount);

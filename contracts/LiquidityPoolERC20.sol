@@ -21,6 +21,7 @@ contract LiquidityPoolERC20 is ILiquidityPoolERC20, ERC20, OnlyCoreCall {
         token = token_;
     }
 
+    /// @inheritdoc ILiquidityPoolERC20
     function addLiquidity(uint256 amount) external override {
         uint256 value = _addLiquidity(amount);
 
@@ -39,6 +40,7 @@ contract LiquidityPoolERC20 is ILiquidityPoolERC20, ERC20, OnlyCoreCall {
         _mint(msg.sender, amount);
     }
 
+    /// @inheritdoc ILiquidityPoolERC20
     function removeLiquidity(uint256 amount) external override {
         uint256 value = _removeLiquidity(amount);
 

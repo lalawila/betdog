@@ -20,15 +20,17 @@ library Condition {
         uint64 startTime;
         uint64 endTime;
         uint64 outcomeWinIndex;
-        uint256 lockedValue;
+        uint256 reserve;
+        bytes32 ipfsHash;
     }
 
     function createCondition(
         Condition.Info storage self,
         uint64[] calldata oddsList,
-        uint256 valueOfLiquidity,
+        uint256 reserve,
         uint64 startTime,
-        uint64 endTime
+        uint64 endTime,
+        bytes32 ipfsHash
     ) internal {
         uint256 totalOdds = 0;
         for (uint256 i = 0; i < oddsList.length; i++) {
@@ -40,10 +42,11 @@ library Condition {
         require(endTime > startTime, "endTime must be greater than startTime");
 
         self.state = Condition.ConditionState.CREATED;
-        self.reserves = calcReserve(oddsList, valueOfLiquidity);
+        self.reserves = calcReserve(oddsList, reserve);
         self.startTime = startTime;
         self.endTime = endTime;
-        self.lockedValue = valueOfLiquidity;
+        self.reserve = reserve;
+        self.ipfsHash = ipfsHash;
     }
 
     function addReserve(Condition.Info storage self, uint64 betIndex, uint256 amount) internal returns (uint256 reward) {
