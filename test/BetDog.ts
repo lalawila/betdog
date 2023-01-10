@@ -63,6 +63,7 @@ async function testBetting(oddsList: number[], betIndex: number) {
             valueOfLiquidity,
             startTime,
             endTime,
+            ethers.utils.formatBytes32String(""),
         ),
     )
         .to.emit(core, "CreatedCondition")
@@ -70,26 +71,26 @@ async function testBetting(oddsList: number[], betIndex: number) {
 
     token.connect(better).approve(core.address, betAmount)
 
-    console.log("before reserves:", (await core.getCondition(conditionId)).reserves)
+    // console.log("before reserves:", (await core.getCondition(conditionId)).reserves)
     const beforeSumReserves = (await core.getCondition(conditionId)).reserves.reduce((a, b) => a.add(b))
-    console.log("before sum of reserves:", beforeSumReserves)
+    // console.log("before sum of reserves:", beforeSumReserves)
 
     await expect(core.connect(better).bet(conditionId, betIndex, betAmount)).to.emit(bet, "MintedBet").withArgs(tokenId)
 
-    const reward = (await bet.getBet(tokenId)).reward
+    // const reward = (await bet.getBet(tokenId)).reward
 
-    console.log("betAmount:", betAmount)
-    console.log("reward:", reward)
-    console.log("after reserves:", (await core.getCondition(conditionId)).reserves)
+    // console.log("betAmount:", betAmount)
+    // console.log("reward:", reward)
+    // console.log("after reserves:", (await core.getCondition(conditionId)).reserves)
 
     // console.log("reserves:", (await core.getCondition(conditionId)).reserves)
-    const afterSumReserves = (await core.getCondition(conditionId)).reserves.reduce((a, b) => a.add(b))
-    console.log("after sum of reserves:", afterSumReserves)
+    // const afterSumReserves = (await core.getCondition(conditionId)).reserves.reduce((a, b) => a.add(b))
+    // console.log("after sum of reserves:", afterSumReserves)
 
-    console.log("before and bet amount:", beforeSumReserves.add(betAmount))
-    console.log("after and reward:", afterSumReserves.add(reward))
+    // console.log("before and bet amount:", beforeSumReserves.add(betAmount))
+    // console.log("after and reward:", afterSumReserves.add(reward))
 
-    console.log("real odds:", reward.add(betAmount).mul(multiplier).div(betAmount).toNumber() / multiplier)
+    // console.log("real odds:", reward.add(betAmount).mul(multiplier).div(betAmount).toNumber() / multiplier)
 
     await time.increaseTo(endTime)
 
@@ -125,7 +126,13 @@ describe("BetDog", function () {
             const multiplier = 1e9
 
             await expect(
-                core.createCondition([5 * multiplier, 1.25 * multiplier], valueOfLiquidity, startTime, endTime),
+                core.createCondition(
+                    [5 * multiplier, 1.25 * multiplier],
+                    valueOfLiquidity,
+                    startTime,
+                    endTime,
+                    ethers.utils.formatBytes32String(""),
+                ),
             ).to.be.revertedWithCustomError(core, "MustBeOracle")
         })
         it("Create condition", async function () {
@@ -138,8 +145,17 @@ describe("BetDog", function () {
 
             const valueOfLiquidity = (await pool.totalValue()).div(2)
 
-            await expect(core.connect(oracle).createCondition([5 * multiplier, 1.25 * multiplier], valueOfLiquidity, startTime, endTime))
-                .not.to.be.reverted
+            await expect(
+                core
+                    .connect(oracle)
+                    .createCondition(
+                        [5 * multiplier, 1.25 * multiplier],
+                        valueOfLiquidity,
+                        startTime,
+                        endTime,
+                        ethers.utils.formatBytes32String(""),
+                    ),
+            ).not.to.be.reverted
         })
     })
     describe("Betting", function () {

@@ -55,7 +55,7 @@ contract Core is Ownable, ICore {
 
     /// @inheritdoc ICore
     function createCondition(
-        uint64[] calldata oddsList,
+        uint64[] calldata odds,
         uint256 reserve,
         uint64 startTime,
         uint64 endTime,
@@ -69,7 +69,7 @@ contract Core is Ownable, ICore {
 
         Condition.Info storage conditionInfo = conditions[lastConditionId];
 
-        conditionInfo.createCondition(oddsList, reserve, startTime, endTime, ipfsHash);
+        conditionInfo.createCondition(odds, reserve, startTime, endTime, ipfsHash);
 
         emit CreatedCondition(lastConditionId);
         return lastConditionId;

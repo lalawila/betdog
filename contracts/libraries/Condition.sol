@@ -25,7 +25,7 @@ library Condition {
 
     function createCondition(
         Condition.Info storage self,
-        uint64[] calldata oddsList,
+        uint64[] calldata odds,
         uint256 reserve,
         uint64 startTime,
         uint64 endTime,
@@ -34,15 +34,15 @@ library Condition {
         require(endTime > startTime, "end time must be greater than start time");
 
         uint256 totalOdds = 0;
-        for (uint256 i = 0; i < oddsList.length; i++) {
-            totalOdds += multiplier ** 2 / oddsList[i];
+        for (uint256 i = 0; i < odds.length; i++) {
+            totalOdds += multiplier ** 2 / odds[i];
         }
 
         // 1e4 is allowed tolerances
-        require(totalOdds >= (multiplier - 1e4), "total probabilities must greater than or equal to 1");
+        require(totalOdds >= (multiplier - 1e4), "sum of probabilities must be greater than or equal to 1");
 
         self.state = Condition.ConditionState.CREATED;
-        self.reserves = calcReserve(oddsList, reserve);
+        self.reserves = calcReserve(odds, reserve);
         self.startTime = startTime;
         self.endTime = endTime;
         self.reserve = reserve;
@@ -75,11 +75,11 @@ library Condition {
         }
     }
 
-    function calcReserve(uint64[] calldata oddsList, uint256 totalReserve) internal pure returns (uint256[] memory reserves) {
-        reserves = new uint256[](oddsList.length);
+    function calcReserve(uint64[] calldata odds, uint256 totalReserve) internal pure returns (uint256[] memory reserves) {
+        reserves = new uint256[](odds.length);
 
-        for (uint64 i = 0; i < oddsList.length; i++) {
-            reserves[i] = (totalReserve * multiplier) / oddsList[i];
+        for (uint64 i = 0; i < odds.length; i++) {
+            reserves[i] = (totalReserve * multiplier) / odds[i];
         }
     }
 
