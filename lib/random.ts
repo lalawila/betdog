@@ -19,7 +19,7 @@ export function randomOddsList(len: number) {
 
     const oddsList = []
     for (let i = 0; i < len; i++) {
-        const odds = Math.floor((sum / ratios[i]) * 95) / 100
+        const odds = Math.floor((sum / ratios[i]) * 100) / 100
         oddsList.push(odds)
     }
 

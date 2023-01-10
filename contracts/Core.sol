@@ -29,6 +29,9 @@ contract Core is Ownable, ICore {
 
     uint256 constant minReserve = 100 ether;
 
+    uint256 constant multiplier = 1e9;
+    uint256 constant fee = 1e7;
+
     modifier onlyOracle() {
         if (oracle != msg.sender) revert MustBeOracle();
         _;
@@ -93,7 +96,9 @@ contract Core is Ownable, ICore {
         require(conditionInfo.state == Condition.ConditionState.RESOLVED, "must be resolved first");
 
         if (conditionInfo.outcomeWinIndex == betInfo.outcomeIndex) {
-            pool.pay(msg.sender, betInfo.reward + betInfo.amount);
+            // There is a 1% of winer’s rewards will be charge for liquidity income.
+            uint256 reward = (betInfo.reward * (multiplier - fee)) / multiplier;
+            pool.pay(msg.sender, reward + betInfo.amount);
         }
 
         betNFT.resolveBet(tokenId);

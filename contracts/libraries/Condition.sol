@@ -5,7 +5,6 @@ import "hardhat/console.sol";
 
 library Condition {
     uint256 constant multiplier = 1e9;
-    uint256 constant fee = 5e6;
 
     enum ConditionState {
         CREATED,
@@ -32,14 +31,15 @@ library Condition {
         uint64 endTime,
         bytes32 ipfsHash
     ) internal {
+        require(endTime > startTime, "end time must be greater than start time");
+
         uint256 totalOdds = 0;
         for (uint256 i = 0; i < oddsList.length; i++) {
             totalOdds += multiplier ** 2 / oddsList[i];
         }
 
-        require(totalOdds >= multiplier, "total odds must greater than or equal to 1");
-
-        require(endTime > startTime, "endTime must be greater than startTime");
+        // 1e4 is allowed tolerances
+        require(totalOdds >= (multiplier - 1e4), "total probabilities must greater than or equal to 1");
 
         self.state = Condition.ConditionState.CREATED;
         self.reserves = calcReserve(oddsList, reserve);
@@ -60,8 +60,6 @@ library Condition {
         uint256 afterAnothers = k / self.reserves[betIndex];
         reward = anothersReserves - afterAnothers;
 
-        reward = (reward * (multiplier - fee)) / multiplier;
-
         uint256 ratio = (multiplier * afterAnothers) / anothersReserves;
 
         for (uint64 i = 0; i < self.reserves.length; i++) {
@@ -77,11 +75,11 @@ library Condition {
         }
     }
 
-    function calcReserve(uint64[] calldata oddsList, uint256 valueOfLiquidity) internal pure returns (uint256[] memory reserves) {
+    function calcReserve(uint64[] calldata oddsList, uint256 totalReserve) internal pure returns (uint256[] memory reserves) {
         reserves = new uint256[](oddsList.length);
 
         for (uint64 i = 0; i < oddsList.length; i++) {
-            reserves[i] = (valueOfLiquidity * multiplier) / oddsList[i];
+            reserves[i] = (totalReserve * multiplier) / oddsList[i];
         }
     }
 
