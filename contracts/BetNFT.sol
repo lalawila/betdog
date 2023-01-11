@@ -48,10 +48,10 @@ contract BetNFT is ERC721, IBetNFT, OnlyCoreCall {
     }
 
     function resolveBet(uint256 tokenId) external override onlyCore {
-        IBetNFT.Info storage bet = bets[tokenId];
+        IBetNFT.Info storage betInfo = bets[tokenId];
 
-        require(bet.state == BetState.CREATED);
+        require(betInfo.state == BetState.CREATED);
 
-        bet.state = BetState.RESOLVED;
+        betInfo.state = BetState.RESOLVED;
     }
 }

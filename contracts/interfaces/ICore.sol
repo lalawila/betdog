@@ -13,11 +13,13 @@ interface ICore {
     function getCondition(uint256 conditionId) external view returns (Condition.Info memory conditionInfo);
 
     /// @notice Oracle: Create new condition.
-    /// @param  oddsList Odds list for outcomes such as [4.27, 8.55, 1.42]
-    /// @param reserve The amount of reserve and will be lock in pool
-    /// @param  ipfsHash detailed info about match stored in IPFS
+    /// @param odds Odds for outcomes such as [4.27, 8.55, 1.42]
+    /// @param reserve The amount of reserve will be locked in the pool
+    /// @param startTime The start time of betting
+    /// @param endTime The end time of betting
+    /// @param ipfsHash detailed info about match stored in IPFS
     function createCondition(
-        uint64[] calldata oddsList,
+        uint64[] calldata odds,
         uint256 reserve,
         uint64 startTime,
         uint64 endTime,
