@@ -12,7 +12,8 @@ describe("Benchmarking", async function () {
         const BetNFT = await ethers.getContractFactory("BetNFT")
         const LiquidityPoolERC20 = await ethers.getContractFactory("LiquidityPoolERC20")
 
-        const [owner, oracle, maker1, maker2, better1, better2, better3, better4, better5] = await ethers.getSigners()
+        const [owner, oracle, maker1, maker2, better1, better2, better3, better4, better5] =
+            await ethers.getSigners()
 
         const token = await TestToken.deploy(ethers.utils.parseEther("10000"))
         const core = await Core.deploy(oracle.address)
@@ -44,11 +45,17 @@ describe("Benchmarking", async function () {
             ONE_DAY_IN_SECS,
         }
     }
-    async function makeCondition(core: any, oracle: any, startTime: any, endTime: any, oddsList: number[]) {
+    async function makeGame(
+        core: any,
+        oracle: any,
+        startTime: any,
+        endTime: any,
+        oddsList: number[],
+    ) {
         const lockValue = ethers.utils.parseEther("100")
         const multiplier = 1e9
 
-        await core.connect(oracle).createCondition(
+        await core.connect(oracle).createGame(
             oddsList.map((x) => Math.floor(x * multiplier)),
             lockValue,
             startTime,
@@ -56,13 +63,27 @@ describe("Benchmarking", async function () {
             ethers.utils.formatBytes32String(""),
         )
 
-        return await core.lastConditionId()
+        return await core.lastGameId()
     }
 
     describe("Benchmarking", async function () {
         it("Benchmarking", async function () {
-            const { core, bet, pool, token, owner, oracle, maker1, maker2, better1, better2, better3, better4, better5, ONE_HOUR_IN_SECS } =
-                await loadFixture(deployContracts)
+            const {
+                core,
+                bet,
+                pool,
+                token,
+                owner,
+                oracle,
+                maker1,
+                maker2,
+                better1,
+                better2,
+                better3,
+                better4,
+                better5,
+                ONE_HOUR_IN_SECS,
+            } = await loadFixture(deployContracts)
 
             await token.transfer(maker1.address, ethers.utils.parseEther("2000"))
             await token.transfer(maker2.address, ethers.utils.parseEther("2000"))
@@ -97,14 +118,20 @@ describe("Benchmarking", async function () {
 
                 const { oddsList, rightIndex } = randomOddsList(len)
 
-                const conditionId = await makeCondition(core, oracle, timestamp, timestamp + ONE_HOUR_IN_SECS, oddsList)
+                const gameId = await makeGame(
+                    core,
+                    oracle,
+                    timestamp,
+                    timestamp + ONE_HOUR_IN_SECS,
+                    oddsList,
+                )
 
                 const tokenIds = []
 
                 for (const better of betters) {
                     await token.connect(better).approve(core.address, betAmount)
 
-                    await core.connect(better).bet(conditionId, ranInt(0, len), betAmount)
+                    await core.connect(better).bet(gameId, ranInt(0, len), betAmount)
 
                     const tokenId = await bet.lastTokenId()
                     tokenIds.push(tokenId)
@@ -113,7 +140,7 @@ describe("Benchmarking", async function () {
                 timestamp += ONE_HOUR_IN_SECS
                 await time.increaseTo(timestamp)
 
-                await core.connect(oracle).resolveCondition(conditionId, rightIndex)
+                await core.connect(oracle).resolveGame(gameId, rightIndex)
 
                 for (const idx in betters) {
                     // 获得奖金
@@ -128,7 +155,7 @@ describe("Benchmarking", async function () {
 
             // console.log("after maker1 value:", await token.balanceOf(maker1.address))
             // console.log("after maker2 value:", await token.balanceOf(maker2.address))
-            console.log(`-------- after ${times} times condition --------`)
+            console.log(`-------- after ${times} times game --------`)
 
             await console.log("after pool value:", afterPoolValue)
 
@@ -137,7 +164,11 @@ describe("Benchmarking", async function () {
 
             const netProfit = afterPoolValue.sub(beforePoolValue)
             console.log("net profit:", netProfit)
-            console.log(`Liquidity Fee: netProfit / totalBetValue = ${netProfit.mul(100).div(totalBetValue)}%`)
+            console.log(
+                `Liquidity Fee: netProfit / totalBetValue = ${netProfit
+                    .mul(100)
+                    .div(totalBetValue)}%`,
+            )
         }).timeout(1000000000)
     })
 })

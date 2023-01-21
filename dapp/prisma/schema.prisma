@@ -1,0 +1,70 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Category {
+  id     Int     @id @default(autoincrement())
+  name   String  @unique
+  sports Sport[]
+}
+
+model Sport {
+  id         Int      @id @default(autoincrement())
+  name       String   @unique
+  category   Category @relation(fields: [categoryId], references: [id])
+  categoryId Int
+  leagues    League[]
+}
+
+model League {
+  id      Int    @id @default(autoincrement())
+  name    String
+  apiId   Int    @unique
+  sport   Sport  @relation(fields: [sportId], references: [id])
+  sportId Int
+  games   Game[]
+}
+
+model Game {
+  id          Int           @id @default(autoincrement())
+  name        String
+  apiId       Int           @unique
+  league      League        @relation(fields: [leagueId], references: [id])
+  leagueId    Int
+  initialOdds InitialOdds[]
+}
+
+model InitialOdds {
+  id       Int      @id @default(autoincrement())
+  outcomes String[]
+  odds     Int[]
+
+  game        Game      @relation(fields: [gameId], references: [id])
+  gameId      Int
+  bookmaker   Bookmaker @relation(fields: [bookmakerId], references: [id])
+  bookmakerId Int
+  bet         Bet       @relation(fields: [betId], references: [id])
+  betId       Int
+}
+
+model Bookmaker {
+  id          Int           @id @default(autoincrement())
+  name        String
+  apiId       Int           @unique
+  initialOdds InitialOdds[]
+}
+
+model Bet {
+  id          Int           @id @default(autoincrement())
+  name        String
+  apiId       Int           @unique
+  initialOdds InitialOdds[]
+}

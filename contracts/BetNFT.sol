@@ -26,7 +26,7 @@ contract BetNFT is ERC721, IBetNFT, OnlyCoreCall {
 
     function mint(
         address account,
-        uint256 conditionId,
+        uint256 gameId,
         uint256 outcomeIndex,
         uint256 amount,
         uint256 reward
@@ -37,7 +37,7 @@ contract BetNFT is ERC721, IBetNFT, OnlyCoreCall {
 
         IBetNFT.Info storage betInfo = bets[lastTokenId];
         betInfo.state = BetState.CREATED;
-        betInfo.conditionId = conditionId;
+        betInfo.gameId = gameId;
         betInfo.outcomeIndex = outcomeIndex;
         betInfo.amount = amount;
         betInfo.reward = reward;

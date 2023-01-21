@@ -4,7 +4,7 @@ pragma solidity ^0.8.17;
 import "./interfaces/ICore.sol";
 import "./interfaces/IBetNFT.sol";
 import "./interfaces/ILiquidityPoolERC20.sol";
-import "./libraries/Condition.sol";
+import "./libraries/Game.sol";
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
@@ -14,18 +14,18 @@ import "hardhat/console.sol";
 
 contract Core is Ownable, ICore {
     using SafeERC20 for IERC20;
-    using Condition for Condition.Info;
+    using Game for Game.Info;
 
-    event CreatedCondition(uint256 indexed conditionId);
+    event CreatedGame(uint256 indexed gameId);
 
-    mapping(uint256 => Condition.Info) conditions;
+    mapping(uint256 => Game.Info) games;
 
     address public immutable oracle;
 
     IBetNFT public betNFT;
     ILiquidityPoolERC20 public pool;
 
-    uint256 public override lastConditionId;
+    uint256 public override lastGameId;
 
     uint256 constant minReserve = 100 ether;
 
@@ -49,12 +49,12 @@ contract Core is Ownable, ICore {
         betNFT = IBetNFT(bet_);
     }
 
-    function getCondition(uint256 conditionId) external view returns (Condition.Info memory conditionInfo) {
-        return conditions[conditionId];
+    function getGame(uint256 gameId) external view returns (Game.Info memory gameInfo) {
+        return games[gameId];
     }
 
     /// @inheritdoc ICore
-    function createCondition(
+    function createGame(
         uint64[] calldata odds,
         uint256 reserve,
         uint64 startTime,
@@ -65,37 +65,41 @@ contract Core is Ownable, ICore {
 
         pool.lockValue(reserve);
 
-        lastConditionId++;
+        lastGameId++;
 
-        Condition.Info storage conditionInfo = conditions[lastConditionId];
+        Game.Info storage gameInfo = games[lastGameId];
 
-        conditionInfo.createCondition(odds, reserve, startTime, endTime, ipfsHash);
+        gameInfo.createGame(odds, reserve, startTime, endTime, ipfsHash);
 
-        emit CreatedCondition(lastConditionId);
-        return lastConditionId;
+        emit CreatedGame(lastGameId);
+        return lastGameId;
     }
 
-    function resolveCondition(uint256 conditionId, uint64 outcomeWinIndex) external onlyOracle {
-        conditions[conditionId].resolveCondition(outcomeWinIndex);
-        pool.releaseValue(conditions[conditionId].reserve);
+    function resolveGame(uint256 gameId, uint64 outcomeWinIndex) external onlyOracle {
+        games[gameId].resolveGame(outcomeWinIndex);
+        pool.releaseValue(games[gameId].reserve);
     }
 
-    function bet(uint256 conditionId, uint64 betIndex, uint256 amount) public override returns (uint256 tokenId) {
+    function bet(
+        uint256 gameId,
+        uint64 betIndex,
+        uint256 amount
+    ) public override returns (uint256 tokenId) {
         IERC20(pool.token()).safeTransferFrom(msg.sender, address(pool), amount);
 
-        uint256 reward = conditions[conditionId].addReserve(betIndex, amount);
+        uint256 reward = games[gameId].addReserve(betIndex, amount);
 
-        tokenId = betNFT.mint(msg.sender, conditionId, betIndex, amount, reward);
+        tokenId = betNFT.mint(msg.sender, gameId, betIndex, amount, reward);
     }
 
     function resolveBet(uint256 tokenId) external {
         IBetNFT.Info memory betInfo = betNFT.getBet(tokenId);
 
-        Condition.Info storage conditionInfo = conditions[betInfo.conditionId];
+        Game.Info storage gameInfo = games[betInfo.gameId];
 
-        require(conditionInfo.state == Condition.ConditionState.RESOLVED, "must be resolved first");
+        require(gameInfo.state == Game.GameState.RESOLVED, "must be resolved first");
 
-        if (conditionInfo.outcomeWinIndex == betInfo.outcomeIndex) {
+        if (gameInfo.outcomeWinIndex == betInfo.outcomeIndex) {
             // There is a 1% of winer’s rewards will be charge for liquidity income.
             uint256 reward = (betInfo.reward * (multiplier - fee)) / multiplier;
             pool.pay(msg.sender, reward + betInfo.amount);
