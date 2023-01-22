@@ -26,9 +26,9 @@ contract BetNFT is ERC721, IBetNFT, OnlyCoreCall {
 
     function mint(
         address account,
-        uint256 gameId,
-        uint256 outcomeIndex,
-        uint256 amount,
+        uint256 gambleId,
+        uint32 betIndex,
+        uint256 stake,
         uint256 reward
     ) external override onlyCore returns (uint256) {
         lastTokenId++;
@@ -37,9 +37,9 @@ contract BetNFT is ERC721, IBetNFT, OnlyCoreCall {
 
         IBetNFT.Info storage betInfo = bets[lastTokenId];
         betInfo.state = BetState.CREATED;
-        betInfo.gameId = gameId;
-        betInfo.outcomeIndex = outcomeIndex;
-        betInfo.amount = amount;
+        betInfo.gambleId = gambleId;
+        betInfo.betIndex = betIndex;
+        betInfo.stake = stake;
         betInfo.reward = reward;
 
         emit MintedBet(lastTokenId);

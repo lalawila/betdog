@@ -28,6 +28,8 @@ async function deployContracts() {
     const startTime = (await time.latest()) + ONE_DAY_IN_SECS
     const endTime = startTime + ONE_DAY_IN_SECS
 
+    const multiplier = 1e9
+
     return {
         core,
         bet,
@@ -39,72 +41,56 @@ async function deployContracts() {
         better,
         startTime,
         endTime,
+        multiplier,
     }
 }
 
-async function testBetting(oddsList: number[], betIndex: number) {
-    const { token, core, pool, bet, oracle, maker, better, startTime, endTime } = await loadFixture(
-        deployContracts,
-    )
+async function testBetting(name: string, outcomes: string[], oddsList: number[], betIndex: number) {
+    const { token, core, pool, bet, oracle, maker, better, startTime, endTime, multiplier } =
+        await loadFixture(deployContracts)
 
     const amount = ethers.utils.parseEther("200")
     await token.connect(maker).approve(pool.address, amount)
     await pool.connect(maker).addLiquidity(amount)
 
-    const valueOfLiquidity = (await pool.totalValue()).div(2)
+    const lokedReserve = (await pool.totalValue()).div(2)
 
-    const multiplier = 1e9
-
-    const gameId = 1
-    const tokenId = 1
     const betAmount = ethers.utils.parseEther("0.005")
 
+    const gameId = (await core.lastGameId()).add(1)
+    const gambleId = (await core.lastGambleId()).add(1)
+    const tokenId = (await bet.lastTokenId()).add(1)
+
     await expect(
-        core.connect(oracle).createGame(
-            oddsList.map((odds) => odds * multiplier),
-            valueOfLiquidity,
-            startTime,
-            endTime,
-            ethers.utils.formatBytes32String(""),
-        ),
+        core.connect(oracle).createGame(startTime, endTime, ethers.utils.formatBytes32String("")),
     )
         .to.emit(core, "CreatedGame")
         .withArgs(gameId)
 
+    await core.connect(oracle).createGamble(
+        gameId,
+        name,
+        outcomes,
+        oddsList.map((odds) => odds * multiplier),
+        lokedReserve,
+    )
+
     token.connect(better).approve(core.address, betAmount)
 
-    // console.log("before reserves:", (await core.getGame(gameId)).reserves)
-    const beforeSumReserves = (await core.getGame(gameId)).reserves.reduce((a, b) => a.add(b))
-    // console.log("before sum of reserves:", beforeSumReserves)
-
-    await expect(core.connect(better).bet(gameId, betIndex, betAmount))
+    await expect(core.connect(better).bet(gambleId, betIndex, betAmount))
         .to.emit(bet, "MintedBet")
         .withArgs(tokenId)
-
-    // const reward = (await bet.getBet(tokenId)).reward
-
-    // console.log("betAmount:", betAmount)
-    // console.log("reward:", reward)
-    // console.log("after reserves:", (await core.getGame(gameId)).reserves)
-
-    // console.log("reserves:", (await core.getGame(gameId)).reserves)
-    // const afterSumReserves = (await core.getGame(gameId)).reserves.reduce((a, b) => a.add(b))
-    // console.log("after sum of reserves:", afterSumReserves)
-
-    // console.log("before and bet amount:", beforeSumReserves.add(betAmount))
-    // console.log("after and reward:", afterSumReserves.add(reward))
-
-    // console.log("real odds:", reward.add(betAmount).mul(multiplier).div(betAmount).toNumber() / multiplier)
 
     await time.increaseTo(endTime)
 
     // 设置胜利场次
-    await core.connect(oracle).resolveGame(gameId, betIndex)
+    await core.connect(oracle).resolveGame(gameId)
+    await core.connect(oracle).resolveGamble(gambleId, betIndex)
 
     console.log(await token.balanceOf(better.address))
 
     // 获得奖金
-    await core.connect(better).resolveBet(tokenId)
+    await core.connect(better).withdraw(tokenId)
 
     console.log(await token.balanceOf(better.address))
 }
@@ -123,50 +109,34 @@ describe("BetDog", function () {
     })
     describe("Game", function () {
         it("Should fail if not oracle call", async function () {
-            const { core, startTime, endTime, pool } = await loadFixture(deployContracts)
-
-            const valueOfLiquidity = (await pool.totalValue()).div(2)
-
-            const multiplier = 1e9
+            const { core, startTime, endTime } = await loadFixture(deployContracts)
 
             await expect(
-                core.createGame(
-                    [5 * multiplier, 1.25 * multiplier],
-                    valueOfLiquidity,
-                    startTime,
-                    endTime,
-                    ethers.utils.formatBytes32String(""),
-                ),
+                core.createGame(startTime, endTime, ethers.utils.formatBytes32String("")),
             ).to.be.revertedWithCustomError(core, "MustBeOracle")
         })
         it("Create game", async function () {
             const { core, oracle, startTime, endTime, pool, token, maker } = await loadFixture(
                 deployContracts,
             )
-            const multiplier = 1e9
 
             const amount = ethers.utils.parseEther("200")
             await token.connect(maker).approve(pool.address, amount)
             await pool.connect(maker).addLiquidity(amount)
 
-            const valueOfLiquidity = (await pool.totalValue()).div(2)
-
             await expect(
-                core
-                    .connect(oracle)
-                    .createGame(
-                        [5 * multiplier, 1.25 * multiplier],
-                        valueOfLiquidity,
-                        startTime,
-                        endTime,
-                        ethers.utils.formatBytes32String(""),
-                    ),
+                core.connect(oracle).createGame(
+                    // [5 * multiplier, 1.25 * multiplier],
+                    startTime,
+                    endTime,
+                    ethers.utils.formatBytes32String(""),
+                ),
             ).not.to.be.reverted
         })
     })
     describe("Betting", function () {
         it("Full steps of betting", async function () {
-            await testBetting([5, 1.25], 1)
+            await testBetting("Winner", ["Home", "Away"], [5, 1.25], 1)
             // await testBetting([5, 2.5, 2.5], 1)
         })
     })

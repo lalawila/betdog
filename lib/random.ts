@@ -26,16 +26,16 @@ export function randomOddsList(len: number) {
     let begin = 0
     const target = ranInt(0, sum)
 
-    let rightIndex = -1
+    let winner = -1
     /// The higher the ratio, the greater the probability
     for (let i = 0; i < ratios.length; i++) {
         if (begin <= target && target < begin + ratios[i]) {
-            rightIndex = i
+            winner = i
             break
         }
 
         begin += ratios[i]
     }
 
-    return { oddsList, rightIndex }
+    return { oddsList, winner }
 }

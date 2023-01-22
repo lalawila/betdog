@@ -5,6 +5,7 @@ import "./interfaces/ICore.sol";
 import "./interfaces/IBetNFT.sol";
 import "./interfaces/ILiquidityPoolERC20.sol";
 import "./libraries/Game.sol";
+import "./libraries/Gamble.sol";
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
@@ -15,17 +16,20 @@ import "hardhat/console.sol";
 contract Core is Ownable, ICore {
     using SafeERC20 for IERC20;
     using Game for Game.Info;
+    using Gamble for Gamble.Info;
 
     event CreatedGame(uint256 indexed gameId);
 
     mapping(uint256 => Game.Info) games;
+    mapping(uint256 => Gamble.Info) gambles;
+
+    uint256 public override lastGameId;
+    uint256 public override lastGambleId;
 
     address public immutable oracle;
 
     IBetNFT public betNFT;
     ILiquidityPoolERC20 public pool;
-
-    uint256 public override lastGameId;
 
     uint256 constant minReserve = 100 ether;
 
@@ -55,54 +59,74 @@ contract Core is Ownable, ICore {
 
     /// @inheritdoc ICore
     function createGame(
-        uint64[] calldata odds,
-        uint256 reserve,
         uint64 startTime,
         uint64 endTime,
         bytes32 ipfsHash
-    ) external onlyOracle returns (uint256) {
-        require(reserve >= minReserve, "must be at least min reserve");
-
-        pool.lockValue(reserve);
-
+    ) external override onlyOracle returns (uint256) {
         lastGameId++;
 
         Game.Info storage gameInfo = games[lastGameId];
 
-        gameInfo.createGame(odds, reserve, startTime, endTime, ipfsHash);
+        gameInfo.createGame(startTime, endTime, ipfsHash);
 
         emit CreatedGame(lastGameId);
         return lastGameId;
     }
 
-    function resolveGame(uint256 gameId, uint64 outcomeWinIndex) external onlyOracle {
-        games[gameId].resolveGame(outcomeWinIndex);
-        pool.releaseValue(games[gameId].reserve);
+    function resolveGame(uint256 gameId) external override onlyOracle {
+        games[gameId].resolveGame();
+    }
+
+    /// @inheritdoc ICore
+    function createGamble(
+        uint256 gameId,
+        string calldata name,
+        string[] calldata outcomes,
+        uint64[] calldata odds,
+        uint256 lokedReserve
+    ) external override onlyOracle returns (uint256) {
+        require(lokedReserve >= minReserve, "must be at least min reserve");
+        pool.lockValue(lokedReserve);
+
+        lastGambleId++;
+
+        Gamble.Info storage gambleInfo = gambles[lastGambleId];
+
+        gambleInfo.createGamble(gameId, name, odds, outcomes, lokedReserve);
+
+        return lastGambleId;
+    }
+
+    function resolveGamble(uint256 gambleId, uint32 winner) external override onlyOracle {
+        Gamble.Info storage gambleInfo = gambles[gambleId];
+
+        gambleInfo.resolveGamble(winner);
+        pool.releaseValue(gambleInfo.lokedReserve);
     }
 
     function bet(
-        uint256 gameId,
-        uint64 betIndex,
-        uint256 amount
+        uint256 gambleId,
+        uint32 betIndex,
+        uint256 stake
     ) public override returns (uint256 tokenId) {
-        IERC20(pool.token()).safeTransferFrom(msg.sender, address(pool), amount);
+        IERC20(pool.token()).safeTransferFrom(msg.sender, address(pool), stake);
 
-        uint256 reward = games[gameId].addReserve(betIndex, amount);
+        uint256 reward = gambles[gambleId].addReserve(betIndex, stake);
 
-        tokenId = betNFT.mint(msg.sender, gameId, betIndex, amount, reward);
+        tokenId = betNFT.mint(msg.sender, gambleId, betIndex, stake, reward);
     }
 
-    function resolveBet(uint256 tokenId) external {
+    function withdraw(uint256 tokenId) external override {
         IBetNFT.Info memory betInfo = betNFT.getBet(tokenId);
 
-        Game.Info storage gameInfo = games[betInfo.gameId];
+        Gamble.Info storage gambleInfo = gambles[betInfo.gambleId];
 
-        require(gameInfo.state == Game.GameState.RESOLVED, "must be resolved first");
+        require(gambleInfo.state == Gamble.GambleState.RESOLVED, "must be resolved first");
 
-        if (gameInfo.outcomeWinIndex == betInfo.outcomeIndex) {
+        if (gambleInfo.winner == betInfo.betIndex) {
             // There is a 1% of winer’s rewards will be charge for liquidity income.
             uint256 reward = (betInfo.reward * (multiplier - fee)) / multiplier;
-            pool.pay(msg.sender, reward + betInfo.amount);
+            pool.pay(msg.sender, reward + betInfo.stake);
         }
 
         betNFT.resolveBet(tokenId);

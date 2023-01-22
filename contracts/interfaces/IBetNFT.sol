@@ -11,10 +11,9 @@ interface IBetNFT {
     // info stored for each minted betNFT
     struct Info {
         BetState state;
-        uint256 gameId;
-        uint256 outcomeIndex;
-        uint256 odds;
-        uint256 amount;
+        uint256 gambleId;
+        uint32 betIndex;
+        uint256 stake;
         uint256 reward;
     }
 
@@ -27,22 +26,15 @@ interface IBetNFT {
     )
         external
         view
-        returns (
-            BetState state,
-            uint256 gameId,
-            uint256 outcomeIndex,
-            uint256 odds,
-            uint256 amount,
-            uint256 reward
-        );
+        returns (BetState state, uint256 gambleId, uint32 betIndex, uint256 stake, uint256 reward);
 
     function getBet(uint256 tokenId) external view returns (IBetNFT.Info memory info);
 
     function mint(
         address account,
-        uint256 gameId,
-        uint256 outcomeIndex,
-        uint256 amount,
+        uint256 gambleId,
+        uint32 betIndex,
+        uint256 stake,
         uint256 reward
     ) external returns (uint256);
 

@@ -26,6 +26,7 @@ describe("Benchmarking", async function () {
 
         const ONE_HOUR_IN_SECS = 60 * 60
         const ONE_DAY_IN_SECS = 24 * 60 * 60
+        const multiplier = 1e9
 
         return {
             core,
@@ -43,27 +44,8 @@ describe("Benchmarking", async function () {
             better5,
             ONE_HOUR_IN_SECS,
             ONE_DAY_IN_SECS,
+            multiplier,
         }
-    }
-    async function makeGame(
-        core: any,
-        oracle: any,
-        startTime: any,
-        endTime: any,
-        oddsList: number[],
-    ) {
-        const lockValue = ethers.utils.parseEther("100")
-        const multiplier = 1e9
-
-        await core.connect(oracle).createGame(
-            oddsList.map((x) => Math.floor(x * multiplier)),
-            lockValue,
-            startTime,
-            endTime,
-            ethers.utils.formatBytes32String(""),
-        )
-
-        return await core.lastGameId()
     }
 
     describe("Benchmarking", async function () {
@@ -83,6 +65,7 @@ describe("Benchmarking", async function () {
                 better4,
                 better5,
                 ONE_HOUR_IN_SECS,
+                multiplier,
             } = await loadFixture(deployContracts)
 
             await token.transfer(maker1.address, ethers.utils.parseEther("2000"))
@@ -106,25 +89,37 @@ describe("Benchmarking", async function () {
             const beforePoolValue = await pool.totalValue()
             console.log("before pool value:", beforePoolValue)
 
-            let timestamp = await time.latest()
-
             const betters = [better1, better2, better3, better4, better5]
 
             const betAmount = ethers.utils.parseEther("1")
 
             const times = 1000
             for (let i = 0; i < times; i++) {
+                const timestamp = await time.latest()
+
                 const len = ranInt(2, 10)
 
-                const { oddsList, rightIndex } = randomOddsList(len)
+                const { oddsList, winner } = randomOddsList(len)
 
-                const gameId = await makeGame(
-                    core,
-                    oracle,
-                    timestamp,
-                    timestamp + ONE_HOUR_IN_SECS,
-                    oddsList,
+                await core
+                    .connect(oracle)
+                    .createGame(
+                        timestamp,
+                        timestamp + ONE_HOUR_IN_SECS,
+                        ethers.utils.formatBytes32String(""),
+                    )
+
+                const gameId = await core.lastGameId()
+
+                await core.connect(oracle).createGamble(
+                    gameId,
+                    "Guess Winner",
+                    Array(oddsList.length).fill(""),
+                    oddsList.map((x) => Math.floor(x * multiplier)),
+                    ethers.utils.parseEther("100"),
                 )
+
+                const gambleId = await core.lastGambleId()
 
                 const tokenIds = []
 
@@ -137,14 +132,15 @@ describe("Benchmarking", async function () {
                     tokenIds.push(tokenId)
                 }
 
-                timestamp += ONE_HOUR_IN_SECS
-                await time.increaseTo(timestamp)
+                await time.increaseTo(timestamp + ONE_HOUR_IN_SECS)
 
-                await core.connect(oracle).resolveGame(gameId, rightIndex)
+                await core.connect(oracle).resolveGame(gameId)
+
+                await core.connect(oracle).resolveGamble(gambleId, winner)
 
                 for (const idx in betters) {
                     // 获得奖金
-                    await core.connect(betters[idx]).resolveBet(tokenIds[idx])
+                    await core.connect(betters[idx]).withdraw(tokenIds[idx])
                 }
             }
 

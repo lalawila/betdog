@@ -51,8 +51,8 @@ model InitialOdds {
   gameId      Int
   bookmaker   Bookmaker @relation(fields: [bookmakerId], references: [id])
   bookmakerId Int
-  bet         Bet       @relation(fields: [betId], references: [id])
-  betId       Int
+  gameble     Gameble   @relation(fields: [gamebleId], references: [id])
+  gamebleId   Int
 }
 
 model Bookmaker {
@@ -62,7 +62,7 @@ model Bookmaker {
   initialOdds InitialOdds[]
 }
 
-model Bet {
+model Gameble {
   id          Int           @id @default(autoincrement())
   name        String
   apiId       Int           @unique
