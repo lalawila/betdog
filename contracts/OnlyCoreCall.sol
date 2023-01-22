@@ -4,14 +4,14 @@ pragma solidity ^0.8.17;
 abstract contract OnlyCoreCall {
     error MustBeCoreCall();
 
-    address private immutable _core;
+    address private immutable core;
 
-    constructor(address core_) {
-        _core = core_;
+    constructor(address _core) {
+        core = _core;
     }
 
     modifier onlyCore() {
-        if (msg.sender != _core) revert MustBeCoreCall();
+        if (msg.sender != core) revert MustBeCoreCall();
         _;
     }
 }

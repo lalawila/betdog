@@ -1,15 +1,18 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 pragma solidity ^0.8.17;
 
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
+
 import "./interfaces/ICore.sol";
 import "./interfaces/IBetNFT.sol";
 import "./interfaces/ILiquidityPoolERC20.sol";
 import "./libraries/Game.sol";
 import "./libraries/Gamble.sol";
 
-import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import "@openzeppelin/contracts/access/Ownable.sol";
+import "./LiquidityPoolERC20.sol";
+import "./BetNFT.sol";
 
 import "hardhat/console.sol";
 
@@ -24,12 +27,13 @@ contract Core is Ownable, ICore {
     mapping(uint256 => Gamble.Info) gambles;
 
     uint256 public override lastGameId;
+
     uint256 public override lastGambleId;
 
     address public immutable oracle;
 
-    IBetNFT public betNFT;
-    ILiquidityPoolERC20 public pool;
+    IBetNFT public override betNFT;
+    mapping(address => ILiquidityPoolERC20) public override pools;
 
     uint256 constant minReserve = 100 ether;
 
@@ -41,17 +45,21 @@ contract Core is Ownable, ICore {
         _;
     }
 
-    constructor(address oracle_) {
-        oracle = oracle_;
+    constructor(address _oracle) {
+        oracle = _oracle;
+
+        betNFT = new BetNFT(address(this));
     }
 
-    function setLP(address lp_) external onlyOwner {
-        pool = ILiquidityPoolERC20(lp_);
+    function createLp(address token) external override onlyOwner {
+        require(address(pools[token]) == address(0), "already created");
+        pools[token] = new LiquidityPoolERC20(address(this), token);
     }
 
-    function setBet(address bet_) external onlyOwner {
-        betNFT = IBetNFT(bet_);
-    }
+    // function createBet() external override onlyOwner {
+    //     require(address(betNFT) == address(0), "already created");
+    //     betNFT = new BetNFT(address(this));
+    // }
 
     function getGame(uint256 gameId) external view returns (Game.Info memory gameInfo) {
         return games[gameId];
@@ -79,6 +87,7 @@ contract Core is Ownable, ICore {
 
     /// @inheritdoc ICore
     function createGamble(
+        address token,
         uint256 gameId,
         string calldata name,
         string[] calldata outcomes,
@@ -86,13 +95,13 @@ contract Core is Ownable, ICore {
         uint256 lokedReserve
     ) external override onlyOracle returns (uint256) {
         require(lokedReserve >= minReserve, "must be at least min reserve");
-        pool.lockValue(lokedReserve);
+        pools[token].lockValue(lokedReserve);
 
         lastGambleId++;
 
         Gamble.Info storage gambleInfo = gambles[lastGambleId];
 
-        gambleInfo.createGamble(gameId, name, odds, outcomes, lokedReserve);
+        gambleInfo.createGamble(token, gameId, name, odds, outcomes, lokedReserve);
 
         return lastGambleId;
     }
@@ -101,7 +110,7 @@ contract Core is Ownable, ICore {
         Gamble.Info storage gambleInfo = gambles[gambleId];
 
         gambleInfo.resolveGamble(winner);
-        pool.releaseValue(gambleInfo.lokedReserve);
+        pools[gambleInfo.token].releaseValue(gambleInfo.lokedReserve);
     }
 
     function bet(
@@ -109,7 +118,13 @@ contract Core is Ownable, ICore {
         uint32 betIndex,
         uint256 stake
     ) public override returns (uint256 tokenId) {
-        IERC20(pool.token()).safeTransferFrom(msg.sender, address(pool), stake);
+        Gamble.Info storage gambleInfo = gambles[gambleId];
+
+        IERC20(gambleInfo.token).safeTransferFrom(
+            msg.sender,
+            address(pools[gambleInfo.token]),
+            stake
+        );
 
         uint256 reward = gambles[gambleId].addReserve(betIndex, stake);
 
@@ -126,7 +141,7 @@ contract Core is Ownable, ICore {
         if (gambleInfo.winner == betInfo.betIndex) {
             // There is a 1% of winer’s rewards will be charge for liquidity income.
             uint256 reward = (betInfo.reward * (multiplier - fee)) / multiplier;
-            pool.pay(msg.sender, reward + betInfo.stake);
+            pools[gambleInfo.token].pay(msg.sender, reward + betInfo.stake);
         }
 
         betNFT.resolveBet(tokenId);

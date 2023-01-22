@@ -13,6 +13,7 @@ library Gamble {
 
     struct Info {
         GambleState state;
+        address token;
         uint256 gameId;
         string name;
         uint256 lokedReserve;
@@ -23,6 +24,7 @@ library Gamble {
 
     function createGamble(
         Gamble.Info storage self,
+        address token,
         uint256 gameId,
         string calldata name,
         uint64[] calldata odds,
@@ -40,6 +42,7 @@ library Gamble {
             "sum of probabilities must be greater than or equal to 1"
         );
 
+        self.token = token;
         self.gameId = gameId;
         self.name = name;
         self.outcomes = outcomes;

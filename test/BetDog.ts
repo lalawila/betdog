@@ -15,11 +15,8 @@ async function deployContracts() {
     const token = await TestToken.deploy(ethers.utils.parseEther("1000"))
     const core = await Core.deploy(oracle.address)
 
-    const pool = await LiquidityPoolERC20.deploy(core.address, token.address)
-    const bet = await BetNFT.deploy(core.address)
-
-    await core.setBet(bet.address)
-    await core.setLP(pool.address)
+    await core.createLp(token.address)
+    // await core.createBet()
 
     await token.transfer(maker.address, ethers.utils.parseEther("400"))
     await token.transfer(better.address, ethers.utils.parseEther("400"))
@@ -32,8 +29,8 @@ async function deployContracts() {
 
     return {
         core,
-        bet,
-        pool,
+        betNFT: BetNFT.attach(await core.betNFT()),
+        pool: LiquidityPoolERC20.attach(await core.pools(token.address)),
         token,
         owner,
         oracle,
@@ -46,7 +43,7 @@ async function deployContracts() {
 }
 
 async function testBetting(name: string, outcomes: string[], oddsList: number[], betIndex: number) {
-    const { token, core, pool, bet, oracle, maker, better, startTime, endTime, multiplier } =
+    const { token, core, betNFT, pool, oracle, maker, better, startTime, endTime, multiplier } =
         await loadFixture(deployContracts)
 
     const amount = ethers.utils.parseEther("200")
@@ -59,7 +56,7 @@ async function testBetting(name: string, outcomes: string[], oddsList: number[],
 
     const gameId = (await core.lastGameId()).add(1)
     const gambleId = (await core.lastGambleId()).add(1)
-    const tokenId = (await bet.lastTokenId()).add(1)
+    const tokenId = (await betNFT.lastTokenId()).add(1)
 
     await expect(
         core.connect(oracle).createGame(startTime, endTime, ethers.utils.formatBytes32String("")),
@@ -68,6 +65,7 @@ async function testBetting(name: string, outcomes: string[], oddsList: number[],
         .withArgs(gameId)
 
     await core.connect(oracle).createGamble(
+        token.address,
         gameId,
         name,
         outcomes,
@@ -78,7 +76,7 @@ async function testBetting(name: string, outcomes: string[], oddsList: number[],
     token.connect(better).approve(core.address, betAmount)
 
     await expect(core.connect(better).bet(gambleId, betIndex, betAmount))
-        .to.emit(bet, "MintedBet")
+        .to.emit(betNFT, "MintedBet")
         .withArgs(tokenId)
 
     await time.increaseTo(endTime)

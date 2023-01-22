@@ -17,8 +17,11 @@ contract LiquidityPoolERC20 is ILiquidityPoolERC20, ERC20, OnlyCoreCall {
     address public immutable override token;
     uint256 public override lockedValue;
 
-    constructor(address core_, address token_) ERC20("BetDog Token", "BDT") OnlyCoreCall(core_) {
-        token = token_;
+    constructor(
+        address _core,
+        address _token
+    ) ERC20("BetDog Pool Token", "BDPT") OnlyCoreCall(_core) {
+        token = _token;
     }
 
     /// @inheritdoc ILiquidityPoolERC20

@@ -5,7 +5,14 @@ import "@nomiclabs/hardhat-etherscan"
 import "dotenv/config"
 
 const config: HardhatUserConfig = {
-    solidity: "0.8.17",
+    solidity: {
+        version: "0.8.17",
+        settings: {
+            optimizer: {
+                enabled: true,
+            },
+        },
+    },
     networks: {
         hardhat: {
             chainId: 1337, // We set 1337 to make interacting with MetaMask simpler

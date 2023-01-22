@@ -18,11 +18,7 @@ describe("Benchmarking", async function () {
         const token = await TestToken.deploy(ethers.utils.parseEther("10000"))
         const core = await Core.deploy(oracle.address)
 
-        const pool = await LiquidityPoolERC20.deploy(core.address, token.address)
-        const bet = await BetNFT.deploy(core.address)
-
-        await core.setBet(bet.address)
-        await core.setLP(pool.address)
+        await core.createLp(token.address)
 
         const ONE_HOUR_IN_SECS = 60 * 60
         const ONE_DAY_IN_SECS = 24 * 60 * 60
@@ -30,8 +26,8 @@ describe("Benchmarking", async function () {
 
         return {
             core,
-            bet,
-            pool,
+            betNFT: BetNFT.attach(await core.betNFT()),
+            pool: LiquidityPoolERC20.attach(await core.pools(token.address)),
             token,
             owner,
             oracle,
@@ -52,7 +48,7 @@ describe("Benchmarking", async function () {
         it("Benchmarking", async function () {
             const {
                 core,
-                bet,
+                betNFT,
                 pool,
                 token,
                 owner,
@@ -93,7 +89,7 @@ describe("Benchmarking", async function () {
 
             const betAmount = ethers.utils.parseEther("1")
 
-            const times = 1000
+            const times = 100
             for (let i = 0; i < times; i++) {
                 const timestamp = await time.latest()
 
@@ -112,6 +108,7 @@ describe("Benchmarking", async function () {
                 const gameId = await core.lastGameId()
 
                 await core.connect(oracle).createGamble(
+                    token.address,
                     gameId,
                     "Guess Winner",
                     Array(oddsList.length).fill(""),
@@ -128,7 +125,7 @@ describe("Benchmarking", async function () {
 
                     await core.connect(better).bet(gameId, ranInt(0, len), betAmount)
 
-                    const tokenId = await bet.lastTokenId()
+                    const tokenId = await betNFT.lastTokenId()
                     tokenIds.push(tokenId)
                 }
 
