@@ -18,7 +18,7 @@ contract BetNFT is ERC721, IBetNFT, OnlyCoreCall {
 
     uint64 constant multiplier = 1e9;
 
-    constructor(address core_) ERC721("Bet NFT", "BETNFT") OnlyCoreCall(core_) {}
+    constructor(address _core) ERC721("Bet NFT", "BETNFT") OnlyCoreCall(_core) {}
 
     function getBet(uint256 tokenId) external view returns (IBetNFT.Info memory) {
         return bets[tokenId];

@@ -1,8 +1,11 @@
 import { HardhatUserConfig } from "hardhat/config"
 import "@nomicfoundation/hardhat-toolbox"
 import "@nomiclabs/hardhat-etherscan"
+import "hardhat-abi-exporter"
 
 import "dotenv/config"
+
+const deployer = process.env["PRIVATE_KEY"] as string
 
 const config: HardhatUserConfig = {
     solidity: {
@@ -19,24 +22,25 @@ const config: HardhatUserConfig = {
         },
         goerli: {
             url: `https://eth-goerli.g.alchemy.com/v2/${process.env["ALCHEMY_GOERLI_KEY"]}`,
-            accounts: [process.env["PRIVATE_KEY"] as string],
+            accounts: [deployer],
+        },
+        polygonMumbai: {
+            url: `https://polygon-mumbai.g.alchemy.com/v2/${process.env["ALCHEMY_MUMBAI_KEY"]}`,
+            accounts: [deployer],
         },
     },
     etherscan: {
         apiKey: {
-            mainnet: process.env["MAINNET_KEY"] as string,
-            mumbai: process.env["MUMBAI_KEY"] as string,
+            mainnet: process.env["MAINNET_SCAN_KEY"] as string, // eth
+            polygon: process.env["MATIC_SCAN_KEY"] as string, // polgon mainnet
+            polygonMumbai: process.env["MATIC_SCAN_KEY"] as string, // polgon testnet
         },
-        customChains: [
-            {
-                network: "mumbai",
-                chainId: 80001,
-                urls: {
-                    apiURL: "https://api-testnet.polygonscan.com/",
-                    browserURL: "https://mumbai.polygonscan.com/",
-                },
-            },
-        ],
+    },
+    abiExporter: {
+        path: "./dapp/abi",
+        runOnCompile: true,
+        clear: true,
+        only: ["IBetNFT.sol", "ICore.sol", "ILiquidityPoolERC20.sol"],
     },
 }
 

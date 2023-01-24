@@ -6,6 +6,7 @@
     "scripts": {
         "compile": "hardhat compile",
         "deploy": "hardhat run ./scripts/deploy.ts",
+        "deploy:mumbai": "hardhat run --network polygonMumbai ./scripts/deploy.ts",
         "test": "hardhat test"
     },
     "author": "",
@@ -15,6 +16,7 @@
         "@openzeppelin/contracts": "^4.8.0",
         "dotenv": "^16.0.3",
         "hardhat": "^2.12.2",
+        "hardhat-abi-exporter": "^2.10.1",
         "prettier": "^2.8.1",
         "prettier-plugin-solidity": "^1.1.1"
     }

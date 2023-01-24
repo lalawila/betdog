@@ -30,7 +30,7 @@ contract Core is Ownable, ICore {
 
     uint256 public override lastGambleId;
 
-    address public immutable oracle;
+    address public oracle;
 
     IBetNFT public override betNFT;
     mapping(address => ILiquidityPoolERC20) public override pools;

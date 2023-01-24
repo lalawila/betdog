@@ -1,0 +1,283 @@
+[
+  {
+    "inputs": [],
+    "name": "MustBeOracle",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "MustSame",
+    "type": "error"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "gambleId",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint32",
+        "name": "betIndex",
+        "type": "uint32"
+      },
+      {
+        "internalType": "uint256",
+        "name": "stake",
+        "type": "uint256"
+      }
+    ],
+    "name": "bet",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "tokenId",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "betNFT",
+    "outputs": [
+      {
+        "internalType": "contract IBetNFT",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "token",
+        "type": "address"
+      },
+      {
+        "internalType": "uint256",
+        "name": "gameId",
+        "type": "uint256"
+      },
+      {
+        "internalType": "string",
+        "name": "name",
+        "type": "string"
+      },
+      {
+        "internalType": "string[]",
+        "name": "outcomes",
+        "type": "string[]"
+      },
+      {
+        "internalType": "uint64[]",
+        "name": "odds",
+        "type": "uint64[]"
+      },
+      {
+        "internalType": "uint256",
+        "name": "lokedReserve",
+        "type": "uint256"
+      }
+    ],
+    "name": "createGamble",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "gambleId",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint64",
+        "name": "startTime",
+        "type": "uint64"
+      },
+      {
+        "internalType": "uint64",
+        "name": "endTime",
+        "type": "uint64"
+      },
+      {
+        "internalType": "bytes32",
+        "name": "ipfsHash",
+        "type": "bytes32"
+      }
+    ],
+    "name": "createGame",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "lastGameId",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "token",
+        "type": "address"
+      }
+    ],
+    "name": "createLp",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "gameId",
+        "type": "uint256"
+      }
+    ],
+    "name": "getGame",
+    "outputs": [
+      {
+        "components": [
+          {
+            "internalType": "enum Game.GameState",
+            "name": "state",
+            "type": "uint8"
+          },
+          {
+            "internalType": "uint64",
+            "name": "startTime",
+            "type": "uint64"
+          },
+          {
+            "internalType": "uint64",
+            "name": "endTime",
+            "type": "uint64"
+          },
+          {
+            "internalType": "bytes32",
+            "name": "ipfsHash",
+            "type": "bytes32"
+          }
+        ],
+        "internalType": "struct Game.Info",
+        "name": "gameInfo",
+        "type": "tuple"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "lastGambleId",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "lastGameId",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "oracle",
+    "outputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "token",
+        "type": "address"
+      }
+    ],
+    "name": "pools",
+    "outputs": [
+      {
+        "internalType": "contract ILiquidityPoolERC20",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "gambleId",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint32",
+        "name": "winner",
+        "type": "uint32"
+      }
+    ],
+    "name": "resolveGamble",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "gameId",
+        "type": "uint256"
+      }
+    ],
+    "name": "resolveGame",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "tokenId",
+        "type": "uint256"
+      }
+    ],
+    "name": "withdraw",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  }
+]
