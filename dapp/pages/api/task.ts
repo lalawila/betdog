@@ -11,6 +11,8 @@ import proxy from "node-global-proxy"
 import http from "../../lib/http"
 import prisma from "../../lib/prisma"
 
+import dateFormat from "dateformat"
+
 // type Data = {
 //     name: string
 // }
@@ -46,6 +48,14 @@ async function getOdds(leagueId: number, season: string, date: string) {
 }
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse<Data>) {
+    // infura 的接口被墙
+    // 所以本地调试需要设置代理
+    if (process.env.NODE_ENV === "development") {
+        console.log("development")
+        proxy.setConfig(process.env.PROXY)
+        proxy.start()
+    }
+
     const auth =
         "Basic " +
         Buffer.from(
@@ -77,15 +87,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
 
     const leagues = await prisma.league.findMany()
 
-    // 数据库或 infura 的接口被墙
-    // 所以本地调试需要设置代理
-    if (process.env.NODE_ENV === "development") {
-        proxy.setConfig(process.env.PROXY)
-        proxy.start()
-    }
-
     for (const league of leagues) {
-        const fixtures = await getFixtures(league.apiId, "2022", "2023-01-28")
+        const fixtures = await getFixtures(
+            league.apiId,
+            "2022",
+            dateFormat(Date.now(), "yyyy-mm-dd	"),
+        )
         for (const fixture of fixtures) {
             if (
                 (await prisma.game.findFirst({
