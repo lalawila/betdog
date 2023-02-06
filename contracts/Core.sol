@@ -66,16 +66,12 @@ contract Core is Ownable, ICore {
     }
 
     /// @inheritdoc ICore
-    function createGame(
-        uint64 startTime,
-        uint64 endTime,
-        bytes32 ipfsHash
-    ) external override onlyOracle returns (uint256) {
+    function createGame(bytes32 ipfsHash) external override onlyOracle returns (uint256) {
         lastGameId++;
 
         Game.Info storage gameInfo = games[lastGameId];
 
-        gameInfo.createGame(startTime, endTime, ipfsHash);
+        gameInfo.createGame(ipfsHash);
 
         emit CreatedGame(lastGameId);
         return lastGameId;

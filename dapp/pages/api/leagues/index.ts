@@ -5,6 +5,10 @@ import { League } from ".prisma/client"
 import prisma from "../../../lib/prisma"
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse<League[]>) {
-    const data = await prisma.league.findMany()
+    const data = await prisma.league.findMany({
+        include: {
+            country: true,
+        },
+    })
     res.status(200).json(data)
 }

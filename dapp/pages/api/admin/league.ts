@@ -48,21 +48,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         const sportId = req.body.sportId
         const leagueData = await getLeague(req.body.leagueId)
 
-        let country = await prisma.country.upsert({
-            where: {
-                code: leagueData.country.code,
-            },
-            update: {
-                name: leagueData.country.name,
-                flagUrl: leagueData.country.flag,
-            },
-            create: {
-                name: leagueData.country.name,
-                code: leagueData.country.code,
-                flagUrl: leagueData.country.flag,
-            },
-        })
-
         const league = await prisma.league.upsert({
             where: {
                 apiId: leagueData.league.id,
@@ -75,8 +60,23 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
                 apiId: leagueData.league.id,
                 name: leagueData.league.name,
                 logoUrl: leagueData.league.logo,
-                countryId: country.id,
-                sportId: sportId,
+                sport: {
+                    connect: {
+                        id: sportId,
+                    },
+                },
+                country: {
+                    connectOrCreate: {
+                        where: {
+                            code: leagueData.country.code,
+                        },
+                        create: {
+                            name: leagueData.country.name,
+                            code: leagueData.country.code,
+                            flagUrl: leagueData.country.flag,
+                        },
+                    },
+                },
             },
         })
 

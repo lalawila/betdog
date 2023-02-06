@@ -20,8 +20,6 @@ describe("Benchmarking", async function () {
 
         await core.createLp(token.address)
 
-        const ONE_HOUR_IN_SECS = 60 * 60
-        const ONE_DAY_IN_SECS = 24 * 60 * 60
         const multiplier = 1e9
 
         return {
@@ -38,8 +36,6 @@ describe("Benchmarking", async function () {
             better3,
             better4,
             better5,
-            ONE_HOUR_IN_SECS,
-            ONE_DAY_IN_SECS,
             multiplier,
         }
     }
@@ -60,7 +56,6 @@ describe("Benchmarking", async function () {
                 better3,
                 better4,
                 better5,
-                ONE_HOUR_IN_SECS,
                 multiplier,
             } = await loadFixture(deployContracts)
 
@@ -97,13 +92,7 @@ describe("Benchmarking", async function () {
 
                 const { oddsList, winner } = randomOddsList(len)
 
-                await core
-                    .connect(oracle)
-                    .createGame(
-                        timestamp,
-                        timestamp + ONE_HOUR_IN_SECS,
-                        ethers.utils.formatBytes32String(""),
-                    )
+                await core.connect(oracle).createGame(ethers.utils.formatBytes32String(""))
 
                 const gameId = await core.lastGameId()
 
@@ -128,8 +117,6 @@ describe("Benchmarking", async function () {
                     const tokenId = await betNFT.lastTokenId()
                     tokenIds.push(tokenId)
                 }
-
-                await time.increaseTo(timestamp + ONE_HOUR_IN_SECS)
 
                 await core.connect(oracle).resolveGame(gameId)
 

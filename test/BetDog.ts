@@ -21,10 +21,6 @@ async function deployContracts() {
     await token.transfer(maker.address, ethers.utils.parseEther("400"))
     await token.transfer(better.address, ethers.utils.parseEther("400"))
 
-    const ONE_DAY_IN_SECS = 24 * 60 * 60
-    const startTime = (await time.latest()) + ONE_DAY_IN_SECS
-    const endTime = startTime + ONE_DAY_IN_SECS
-
     const multiplier = 1e9
 
     return {
@@ -36,15 +32,14 @@ async function deployContracts() {
         oracle,
         maker,
         better,
-        startTime,
-        endTime,
         multiplier,
     }
 }
 
 async function testBetting(name: string, outcomes: string[], oddsList: number[], betIndex: number) {
-    const { token, core, betNFT, pool, oracle, maker, better, startTime, endTime, multiplier } =
-        await loadFixture(deployContracts)
+    const { token, core, betNFT, pool, oracle, maker, better, multiplier } = await loadFixture(
+        deployContracts,
+    )
 
     const amount = ethers.utils.parseEther("200")
     await token.connect(maker).approve(pool.address, amount)
@@ -58,9 +53,7 @@ async function testBetting(name: string, outcomes: string[], oddsList: number[],
     const gambleId = (await core.lastGambleId()).add(1)
     const tokenId = (await betNFT.lastTokenId()).add(1)
 
-    await expect(
-        core.connect(oracle).createGame(startTime, endTime, ethers.utils.formatBytes32String("")),
-    )
+    await expect(core.connect(oracle).createGame(ethers.utils.formatBytes32String("")))
         .to.emit(core, "CreatedGame")
         .withArgs(gameId)
 
@@ -79,7 +72,7 @@ async function testBetting(name: string, outcomes: string[], oddsList: number[],
         .to.emit(betNFT, "MintedBet")
         .withArgs(tokenId)
 
-    await time.increaseTo(endTime)
+    // await time.increaseTo(endTime)
 
     // 设置胜利场次
     await core.connect(oracle).resolveGame(gameId)
@@ -107,16 +100,14 @@ describe("BetDog", function () {
     })
     describe("Game", function () {
         it("Should fail if not oracle call", async function () {
-            const { core, startTime, endTime } = await loadFixture(deployContracts)
+            const { core } = await loadFixture(deployContracts)
 
             await expect(
-                core.createGame(startTime, endTime, ethers.utils.formatBytes32String("")),
+                core.createGame(ethers.utils.formatBytes32String("")),
             ).to.be.revertedWithCustomError(core, "MustBeOracle")
         })
         it("Create game", async function () {
-            const { core, oracle, startTime, endTime, pool, token, maker } = await loadFixture(
-                deployContracts,
-            )
+            const { core, oracle, pool, token, maker } = await loadFixture(deployContracts)
 
             const amount = ethers.utils.parseEther("200")
             await token.connect(maker).approve(pool.address, amount)
@@ -125,8 +116,6 @@ describe("BetDog", function () {
             await expect(
                 core.connect(oracle).createGame(
                     // [5 * multiplier, 1.25 * multiplier],
-                    startTime,
-                    endTime,
                     ethers.utils.formatBytes32String(""),
                 ),
             ).not.to.be.reverted

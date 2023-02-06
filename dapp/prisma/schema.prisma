@@ -46,30 +46,18 @@ model Game {
 }
 
 model Gameble {
-  id          Int           @id @default(autoincrement())
+  id          Int      @id @default(autoincrement())
   name        String
-  apiId       Int           @unique
-  game        Game          @relation(fields: [gameId], references: [id])
+  game        Game     @relation(fields: [gameId], references: [id])
   gameId      Int
-  initialOdds InitialOdds[]
-}
-
-model InitialOdds {
-  id       Int      @id @default(autoincrement())
-  outcomes String[]
-  odds     Int[]
-
-  gameble     Gameble   @relation(fields: [gamebleId], references: [id])
-  gamebleId   Int
-  bookmaker   Bookmaker @relation(fields: [bookmakerId], references: [id])
-  bookmakerId Int
+  outcomes    String[]
+  initialOdds Float[]
 }
 
 model Bookmaker {
-  id          Int           @id @default(autoincrement())
-  name        String
-  apiId       Int           @unique
-  initialOdds InitialOdds[]
+  id    Int    @id @default(autoincrement())
+  name  String
+  apiId Int    @unique
 }
 
 model Country {

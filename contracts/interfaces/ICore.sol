@@ -28,14 +28,8 @@ interface ICore {
     function getGame(uint256 gameId) external view returns (Game.Info memory gameInfo);
 
     /// @notice Oracle: Create new game.
-    /// @param startTime The start time of betting
-    /// @param endTime The end time of betting
     /// @param ipfsHash detailed info about match stored in IPFS
-    function createGame(
-        uint64 startTime,
-        uint64 endTime,
-        bytes32 ipfsHash
-    ) external returns (uint256 lastGameId);
+    function createGame(bytes32 ipfsHash) external returns (uint256 lastGameId);
 
     function resolveGame(uint256 gameId) external;
 
