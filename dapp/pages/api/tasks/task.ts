@@ -8,8 +8,8 @@ import fs from "fs"
 import * as ipfsClient from "ipfs-http-client"
 import proxy from "node-global-proxy"
 
-import http from "../../lib/http"
-import prisma from "../../lib/prisma"
+import http from "@/lib/http"
+import prisma from "@/lib/prisma"
 
 import dateFormat from "dateformat"
 

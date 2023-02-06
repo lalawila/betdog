@@ -25,12 +25,15 @@ model Sport {
 }
 
 model League {
-  id      Int    @id @default(autoincrement())
-  name    String
-  apiId   Int    @unique
-  sport   Sport  @relation(fields: [sportId], references: [id])
-  sportId Int
-  games   Game[]
+  id        Int     @id @default(autoincrement())
+  name      String
+  logoUrl   String
+  country   Country @relation(fields: [countryId], references: [id])
+  apiId     Int     @unique
+  sport     Sport   @relation(fields: [sportId], references: [id])
+  sportId   Int
+  games     Game[]
+  countryId Int
 }
 
 model Game {
@@ -67,4 +70,12 @@ model Bookmaker {
   name        String
   apiId       Int           @unique
   initialOdds InitialOdds[]
+}
+
+model Country {
+  id      Int      @id @default(autoincrement())
+  name    String   @unique
+  code    String   @unique
+  flagUrl String
+  League  League[]
 }
