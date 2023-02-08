@@ -35,8 +35,6 @@ contract Core is Ownable, ICore {
     IBetNFT public override betNFT;
     mapping(address => ILiquidityPoolERC20) public override pools;
 
-    uint256 constant minReserve = 100 ether;
-
     uint256 constant multiplier = 1e9;
     uint256 constant fee = 1e7;
 
@@ -90,7 +88,6 @@ contract Core is Ownable, ICore {
         uint64[] calldata odds,
         uint256 lokedReserve
     ) external override onlyOracle returns (uint256) {
-        require(lokedReserve >= minReserve, "must be at least min reserve");
         pools[token].lockValue(lokedReserve);
 
         lastGambleId++;

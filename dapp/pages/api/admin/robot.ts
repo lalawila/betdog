@@ -44,7 +44,7 @@ async function getOdds(fixtureApiId: number): Promise<
     const response = await http.get("/odds", {
         params: {
             fixture: fixtureApiId,
-            bookmaker: 1,
+            bookmaker: 8, // bet365
         },
     })
     // bookmakers:
@@ -61,6 +61,7 @@ async function getOdds(fixtureApiId: number): Promise<
     //             value:"Away"
     //             odd:"2.00"
 
+    console.log(response.data)
     return response.data.response[0].bookmakers[0].bets
 }
 
@@ -135,7 +136,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
 
                             // 2. 创建 game 至合约。
                             console.log("createGame")
-                            await core.createGame(result.cid.toV0().multihash.bytes.slice(2))
+                            await (
+                                await core.createGame(result.cid.toV0().multihash.bytes.slice(2))
+                            ).wait()
 
                             console.log("lastGameId")
                             const gameId = (await core.lastGameId()).toNumber()
@@ -144,6 +147,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
                             // 3. 记录至数据库。
                             const game = await tx.game.create({
                                 data: {
+                                    contractId: gameId,
                                     ipfs: result.path,
                                     apiId: fixture.fixture.id,
                                     leagueId: league.id,
@@ -159,17 +163,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
                                 if (i == 5) break
 
                                 const outcomes = bet.values.map((item) => item.value) as string[]
-                                const initialOdds = bet.values.map(
-                                    (item) => parseFloat(item.odd) * multiplier,
+                                const initialOdds = bet.values.map((item) =>
+                                    Math.floor(parseFloat(item.odd) * multiplier),
                                 )
-                                await tx.gameble.create({
-                                    data: {
-                                        name: bet.name,
-                                        outcomes,
-                                        gameId: game.id,
-                                        initialOdds,
-                                    },
-                                })
+
                                 // address token,
                                 // uint256 gameId,
                                 // string calldata name,
@@ -178,21 +175,33 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
                                 // uint256 lokedReserve
                                 console.log("createGamle")
                                 console.log(initialOdds)
-                                await core.createGamble(
-                                    address["TestToken"],
-                                    gameId,
-                                    bet.name,
-                                    outcomes,
-                                    initialOdds,
-                                    1000000000000000,
-                                )
+                                await (
+                                    await core.createGamble(
+                                        address["TestToken"],
+                                        gameId,
+                                        bet.name,
+                                        outcomes,
+                                        initialOdds,
+                                        utils.parseEther("10"),
+                                    )
+                                ).wait()
+
+                                await tx.gameble.create({
+                                    data: {
+                                        contractId: (await core.lastGambleId()).toNumber(),
+                                        name: bet.name,
+                                        outcomes,
+                                        gameId: game.id,
+                                        initialOdds,
+                                    },
+                                })
 
                                 i++
                             }
                         }
                     },
                     {
-                        timeout: 50000,
+                        timeout: 100000,
                     },
                 )
             }

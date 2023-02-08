@@ -16,7 +16,7 @@ async function main() {
 
     const TestToken = await ethers.getContractFactory("TestToken")
 
-    const token = await TestToken.deploy(ethers.utils.parseEther("100"))
+    const token = await TestToken.deploy(ethers.utils.parseEther("1000000"))
     await token.deployed()
 
     const Core = await ethers.getContractFactory("Core")
@@ -25,13 +25,20 @@ async function main() {
 
     const core = await Core.deploy(deployer.address)
     await core.deployed()
-    await core.createLp(token.address)
+    await (await core.createLp(token.address)).wait()
 
-    fs.writeFileSync(
+    const LiquidityPoolERC20 = await ethers.getContractFactory("LiquidityPoolERC20")
+    const pool = LiquidityPoolERC20.attach(await core.pools(token.address))
+
+    await (await token.approve(pool.address, ethers.utils.parseEther("1000000"))).wait()
+    await (await pool.addLiquidity(ethers.utils.parseEther("1000000"))).wait()
+
+    await fs.writeFileSync(
         "./dapp/address.json",
         JSON.stringify({
             Core: core.address,
             TestToken: token.address,
+            TestPool: pool.address,
         }),
     )
 

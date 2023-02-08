@@ -37,16 +37,18 @@ model League {
 }
 
 model Game {
-  id       Int       @id @default(autoincrement())
-  apiId    Int       @unique
-  ipfs     String
-  league   League    @relation(fields: [leagueId], references: [id])
-  leagueId Int
-  Gameble  Gameble[]
+  id         Int       @id @default(autoincrement())
+  apiId      Int       @unique
+  contractId Int
+  ipfs       String
+  league     League    @relation(fields: [leagueId], references: [id])
+  leagueId   Int
+  Gameble    Gameble[]
 }
 
 model Gameble {
   id          Int      @id @default(autoincrement())
+  contractId  Int
   name        String
   game        Game     @relation(fields: [gameId], references: [id])
   gameId      Int
