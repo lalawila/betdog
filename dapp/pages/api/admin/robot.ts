@@ -10,6 +10,7 @@ import proxy from "node-global-proxy"
 
 import http from "@/lib/http"
 import prisma from "@/lib/prisma"
+import { Prisma } from "@prisma/client"
 
 import dateFormat from "dateformat"
 
@@ -17,7 +18,30 @@ import dateFormat from "dateformat"
 //     name: string
 // }
 
-async function getFixtures(leagueApiId: number, season: string, date: string) {
+async function getFixtures(
+    leagueApiId: number,
+    season: string,
+    date: string,
+): Promise<
+    {
+        fixture: {
+            id: number
+            timestamp: number
+        }
+        teams: {
+            home: {
+                id: number
+                name: string
+                logo: string
+            }
+            away: {
+                id: number
+                name: string
+                logo: string
+            }
+        }
+    }[]
+> {
     // 获取联赛的比赛
     const response = await http.get("/fixtures", {
         params: {
@@ -113,58 +137,84 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
             time.setDate(time.getDate() + 1)
 
             for (const fixture of fixtures) {
-                await prisma.$transaction(
-                    async (tx) => {
-                        const data = JSON.stringify(fixture)
-                        if (
-                            (await tx.game.findFirst({
-                                where: {
-                                    apiId: fixture.fixture.id,
+                const data = JSON.stringify(fixture)
+                if (
+                    (await prisma.game.findFirst({
+                        where: {
+                            apiId: fixture.fixture.id,
+                        },
+                    })) === null
+                ) {
+                    // 数据库中没有 game
+                    // 1. 详细保存至 IPFS。
+                    // 2. 创建 game 至合约。
+                    // 3. 新建记录至数据库。
+
+                    // 1. 详细保存至 IPFS。
+
+                    // js-multiformats
+
+                    const result = await client.add(data, { pin: true })
+
+                    // 2. 创建 game 至合约。
+                    console.log("createGame")
+                    await (await core.createGame(result.cid.toV0().multihash.bytes.slice(2))).wait()
+
+                    console.log("lastGameId")
+                    const gameId = (await core.lastGameId()).toNumber()
+                    console.log(gameId)
+
+                    // 3. 记录至数据库。
+                    const game = await prisma.game.create({
+                        data: {
+                            contractId: gameId,
+                            ipfs: result.path,
+                            apiId: fixture.fixture.id,
+                            league: {
+                                connect: {
+                                    id: league.id,
                                 },
-                            })) === null
-                        ) {
-                            // 数据库中没有 game
-                            // 1. 详细保存至 IPFS。
-                            // 2. 创建 game 至合约。
-                            // 3. 新建记录至数据库。
-
-                            // 1. 详细保存至 IPFS。
-
-                            // js-multiformats
-
-                            const result = await client.add(data, { pin: true })
-
-                            // 2. 创建 game 至合约。
-                            console.log("createGame")
-                            await (
-                                await core.createGame(result.cid.toV0().multihash.bytes.slice(2))
-                            ).wait()
-
-                            console.log("lastGameId")
-                            const gameId = (await core.lastGameId()).toNumber()
-                            console.log(gameId)
-
-                            // 3. 记录至数据库。
-                            const game = await tx.game.create({
-                                data: {
-                                    contractId: gameId,
-                                    ipfs: result.path,
-                                    apiId: fixture.fixture.id,
-                                    leagueId: league.id,
+                            },
+                            timestamp: fixture.fixture.timestamp,
+                            home: {
+                                connectOrCreate: {
+                                    where: {
+                                        apiId: fixture.teams.home.id,
+                                    },
+                                    create: {
+                                        apiId: fixture.teams.home.id,
+                                        name: fixture.teams.home.name,
+                                        logoUrl: fixture.teams.home.logo,
+                                    },
                                 },
-                            })
-                            console.log(game)
+                            },
+                            away: {
+                                connectOrCreate: {
+                                    where: {
+                                        apiId: fixture.teams.home.id,
+                                    },
+                                    create: {
+                                        apiId: fixture.teams.home.id,
+                                        name: fixture.teams.home.name,
+                                        logoUrl: fixture.teams.home.logo,
+                                    },
+                                },
+                            },
+                        },
+                    })
+                    console.log(game)
 
-                            // 创建 gameble，比如输赢平，进球，之类
-                            const bets = await getOdds(fixture.fixture.id)
+                    // 创建 gameble，比如输赢平，进球，之类
+                    const bets = await getOdds(fixture.fixture.id)
 
-                            let i = 0
-                            for (const bet of bets) {
-                                if (i == 5) break
-
+                    let i = 0
+                    for (const bet of bets) {
+                        if (i == 5) break
+                        await prisma.$transaction(
+                            async (tx) => {
                                 const outcomes = bet.values.map((item) => item.value) as string[]
-                                const initialOdds = bet.values.map((item) =>
-                                    Math.floor(parseFloat(item.odd) * multiplier),
+                                const initialOdds = bet.values.map(
+                                    (item) => new Prisma.Decimal(item.odd),
                                 )
 
                                 // address token,
@@ -181,7 +231,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
                                         gameId,
                                         bet.name,
                                         outcomes,
-                                        initialOdds,
+                                        initialOdds.map((item) => item.mul(multiplier).toNumber()),
                                         utils.parseEther("10"),
                                     )
                                 ).wait()
@@ -195,15 +245,15 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
                                         initialOdds,
                                     },
                                 })
+                            },
+                            {
+                                timeout: 100000,
+                            },
+                        )
 
-                                i++
-                            }
-                        }
-                    },
-                    {
-                        timeout: 100000,
-                    },
-                )
+                        i++
+                    }
+                }
             }
         }
     }

@@ -36,24 +36,38 @@ model League {
   countryId Int
 }
 
+enum Status {
+  NotStarted
+  Finished
+}
+
 model Game {
-  id         Int       @id @default(autoincrement())
-  apiId      Int       @unique
+  id         Int @id @default(autoincrement())
+  apiId      Int @unique
   contractId Int
-  ipfs       String
-  league     League    @relation(fields: [leagueId], references: [id])
-  leagueId   Int
-  Gameble    Gameble[]
+  timestamp  Int
+
+  homeId Int
+  awayId Int
+  home   Team @relation("Home", fields: [homeId], references: [id])
+  away   Team @relation("Away", fields: [awayId], references: [id])
+
+  status Status @default(NotStarted)
+
+  ipfs     String
+  league   League    @relation(fields: [leagueId], references: [id])
+  leagueId Int
+  Gameble  Gameble[]
 }
 
 model Gameble {
-  id          Int      @id @default(autoincrement())
+  id          Int       @id @default(autoincrement())
   contractId  Int
   name        String
-  game        Game     @relation(fields: [gameId], references: [id])
+  game        Game      @relation(fields: [gameId], references: [id])
   gameId      Int
   outcomes    String[]
-  initialOdds Float[]
+  initialOdds Decimal[] @db.Decimal(8, 4)
 }
 
 model Bookmaker {
@@ -68,4 +82,13 @@ model Country {
   code    String   @unique
   flagUrl String
   League  League[]
+}
+
+model Team {
+  id      Int    @id @default(autoincrement())
+  apiId   Int    @unique
+  name    String
+  logoUrl String
+  Home    Game[] @relation("Home")
+  Away    Game[] @relation("Away")
 }
