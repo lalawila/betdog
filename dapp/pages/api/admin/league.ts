@@ -1,9 +1,8 @@
 // Next.js API route support: https://nextjs.org/docs/api-routes/introduction
 import type { NextApiRequest, NextApiResponse } from "next"
 
-import { League } from ".prisma/client"
 import prisma from "@/lib/prisma"
-import http from "@/lib/http"
+import http from "@/lib/rapidapi"
 
 async function getLeague(leagueId: number): Promise<{
     league: {

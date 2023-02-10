@@ -8,7 +8,7 @@ import fs from "fs"
 import * as ipfsClient from "ipfs-http-client"
 import proxy from "node-global-proxy"
 
-import http from "@/lib/http"
+import http from "@/lib/rapidapi"
 import prisma from "@/lib/prisma"
 import { Prisma } from "@prisma/client"
 
