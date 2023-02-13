@@ -191,12 +191,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
                             away: {
                                 connectOrCreate: {
                                     where: {
-                                        apiId: fixture.teams.home.id,
+                                        apiId: fixture.teams.away.id,
                                     },
                                     create: {
-                                        apiId: fixture.teams.home.id,
-                                        name: fixture.teams.home.name,
-                                        logoUrl: fixture.teams.home.logo,
+                                        apiId: fixture.teams.away.id,
+                                        name: fixture.teams.away.name,
+                                        logoUrl: fixture.teams.away.logo,
                                     },
                                 },
                             },

@@ -6,13 +6,24 @@ import styles from "../styles/Home.module.css"
 import useSWR from "swr"
 import http from "@/lib/http"
 
+import { gql, useQuery } from "@apollo/client"
+import type { Game } from "@prisma/client"
+
+const AllLinksQuery = gql`
+    query {
+        games {
+            id
+        }
+    }
+`
+
 const inter = Inter({ subsets: ["latin"] })
 
 function Profile() {
-    const { data, error, isLoading } = useSWR("/api/app/games", http)
+    const { data, loading, error } = useQuery(AllLinksQuery)
 
     if (error) return <div>failed to load</div>
-    if (isLoading) return <div>loading...</div>
+    if (loading) return <div>loading...</div>
 
     console.log(data)
     // render data
