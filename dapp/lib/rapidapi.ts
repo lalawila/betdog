@@ -6,6 +6,7 @@ const http = axios.create({
         "X-RapidAPI-Key": process.env.RAPIDAPI_KEY,
         "X-RapidAPI-Host": "api-football-v1.p.rapidapi.com",
     },
+    timeout: 30000,
 })
 
 export default http

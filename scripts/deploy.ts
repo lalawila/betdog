@@ -16,7 +16,7 @@ async function main() {
 
     const TestToken = await ethers.getContractFactory("TestToken")
 
-    const token = await TestToken.deploy(ethers.utils.parseEther("1000000"))
+    const token = await TestToken.deploy(ethers.utils.parseEther("2000000"))
     await token.deployed()
 
     const Core = await ethers.getContractFactory("Core")
@@ -51,21 +51,37 @@ async function main() {
             address: core.address,
             constructorArguments: [deployer.address],
         })
-    } catch {}
+    } catch (error) {
+        console.log(error)
+    }
 
     try {
         await run("verify:verify", {
             address: await core.betNFT(),
             constructorArguments: [core.address],
         })
-    } catch {}
+    } catch (error) {
+        console.log(error)
+    }
 
     try {
         await run("verify:verify", {
             address: await core.pools(token.address),
             constructorArguments: [core.address, token.address],
         })
-    } catch {}
+    } catch (error) {
+        console.log(error)
+    }
+
+    try {
+        await run("verify:verify", {
+            contract: "contracts/test/TestToken.sol:TestToken",
+            address: token.address,
+            constructorArguments: [ethers.utils.parseEther("1000000")],
+        })
+    } catch (error) {
+        console.log(error)
+    }
 }
 
 // We recommend this pattern to be able to use async/await everywhere
