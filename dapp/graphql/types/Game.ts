@@ -7,16 +7,13 @@ builder.prismaObject("Game", {
         timestamp: t.exposeInt("timestamp"),
         home: t.relation("home"),
         away: t.relation("away"),
+        gambles: t.relation("Gamble"),
     }),
 })
 
-// 1.
 builder.queryField("games", (t) =>
-    // 2.
     t.prismaField({
-        // 3.
         type: ["Game"],
-        // 4.
         resolve: (query, _parent, _args, _ctx, _info) => prisma.game.findMany({ ...query }),
     }),
 )

@@ -9,7 +9,8 @@
         "lint": "next lint",
         "vercel-build": "npx prisma generate --data-proxy && next build",
         "codegen": "graphql-codegen --config codegen.ts",
-        "watch": "graphql-codegen -w"
+        "watch": "graphql-codegen -w",
+        "prisma": "dotenv cross-env DATABASE_URL=$MIGRATE_DATABASE_URL prisma"
     },
     "dependencies": {
         "@apollo/client": "^3.7.7",
@@ -38,6 +39,8 @@
         "@graphql-codegen/cli": "3.0.0",
         "@graphql-codegen/client-preset": "2.0.0",
         "@types/dateformat": "^5.0.0",
+        "cross-env": "^7.0.3",
+        "dotenv-cli": "^7.0.0",
         "node-global-proxy": "^1.0.1",
         "prisma": "^4.9.0",
         "ts-node": "^10.9.1",

@@ -18,6 +18,20 @@ import { InjectedConnector } from "wagmi/connectors/injected"
 import addresses from "@/address.json"
 import coreABI from "@/abi/contracts/interfaces/ICore.sol/ICore.json"
 import { erc20ABI } from "wagmi"
+import { waitForTransaction } from "@wagmi/core"
+
+import { useEffect } from "react"
+
+function Balance() {
+    const { address } = useAccount()
+    const { data: balance } = useContractRead({
+        address: addresses.TestToken as `0x${string}`,
+        abi: erc20ABI,
+        functionName: "balanceOf",
+        args: [address as `0x${string}`],
+    })
+    return <h1>{balance?.toString()}</h1>
+}
 
 function Profile() {
     const { address, isConnected } = useAccount()
@@ -31,6 +45,7 @@ function Profile() {
             <div>
                 Connected to {address}
                 <button onClick={() => disconnect()}>Disconnect</button>
+                <Balance />
             </div>
         )
     return <button onClick={() => connect()}>Connect Wallet</button>
@@ -49,14 +64,25 @@ const AllGamesQuery = graphql(`
                 id
                 name
             }
+            gambles {
+                id
+                name
+                contractId
+                outcomes
+            }
         }
     }
 `)
 
 export default function Home() {
     const { data, loading, error } = useQuery(AllGamesQuery)
+    console.log(data)
 
-    const { write: approve } = useContractWrite({
+    const {
+        data: transition,
+        write: approve,
+        isSuccess,
+    } = useContractWrite({
         mode: "recklesslyUnprepared",
         address: addresses.TestToken as `0x${string}`,
         abi: erc20ABI,
@@ -72,18 +98,19 @@ export default function Home() {
         args: [13, 0, utils.parseEther("1")],
     })
 
-    const { address } = useAccount()
+    useEffect(() => {
+        async function fetchData() {
+            if (transition?.hash) {
+                console.log("1231313")
+                await waitForTransaction({
+                    hash: transition?.hash,
+                })
 
-    // const {
-    //     data: test,
-    //     isError,
-    //     isLoading,
-    // } = useContractRead({
-    //     address: addresses.TestToken as `0x${string}`,
-    //     abi: erc20ABI,
-    //     functionName: "balanceOf",
-    //     args: [address as `0x${string}`],
-    // })
+                bet()
+            }
+        }
+        fetchData()
+    }, [isSuccess, transition])
 
     if (error) return <div>failed to load</div>
     if (loading) return <div>loading...</div>
@@ -97,14 +124,23 @@ export default function Home() {
                 <link rel="icon" href="/favicon.ico" />
             </Head>
             <Profile />
-            {address}
-            {/* <h1>{JSON.stringify(test)}</h1> */}
+
             {data?.games.map((game) => (
-                <p key={game.id}>
-                    {game.home.name} vs {game.away.name}
-                    <button onClick={() => approve()}>授权</button>
-                    <button onClick={() => bet()}>下注</button>
-                </p>
+                <div key={game.id}>
+                    <h1>
+                        {game.home.name} vs {game.away.name}
+                    </h1>
+                    {game.gambles.map((gamble) => (
+                        <div key={gamble.id}>
+                            <h3>{gamble.name}</h3>
+                            {gamble.outcomes.map((outcome) => (
+                                <button key={outcome} onClick={() => approve()}>
+                                    {outcome}
+                                </button>
+                            ))}
+                        </div>
+                    ))}
+                </div>
             ))}
         </>
     )

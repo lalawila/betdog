@@ -92,7 +92,7 @@ async function getOdds(fixtureApiId: number): Promise<
 export default async function handler(req: NextApiRequest, res: NextApiResponse<Data>) {
     // infura 的接口被墙
     // 所以本地调试需要设置代理
-    if (process.env.NODE_ENV === "development") {
+    if (process.env.PROXY && process.env.NODE_ENV === "development") {
         proxy.setConfig(process.env.PROXY)
         proxy.start()
     }
@@ -204,7 +204,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
                     })
                     console.log(game)
 
-                    // 创建 gameble，比如输赢平，进球，之类
+                    // 创建 gamble，比如输赢平，进球，之类
                     const bets = await getOdds(fixture.fixture.id)
 
                     let i = 0
@@ -236,7 +236,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
                                     )
                                 ).wait()
 
-                                await tx.gameble.create({
+                                await tx.gamble.create({
                                     data: {
                                         contractId: (await core.lastGambleId()).toNumber(),
                                         name: bet.name,
@@ -258,7 +258,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
         }
     }
 
-    if (process.env.NODE_ENV === "development") {
+    if (process.env.PROXY && process.env.NODE_ENV === "development") {
         proxy.stop()
     }
 

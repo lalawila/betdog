@@ -10,8 +10,9 @@ generator pothos {
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider          = "postgresql"
+  url               = env("DATABASE_URL")
+  shadowDatabaseUrl = env("SHADOW_ATABASE_URL")
 }
 
 model Category {
@@ -59,12 +60,12 @@ model Game {
   status Status @default(NotStarted)
 
   ipfs     String
-  league   League    @relation(fields: [leagueId], references: [id])
+  league   League   @relation(fields: [leagueId], references: [id])
   leagueId Int
-  Gameble  Gameble[]
+  Gamble   Gamble[]
 }
 
-model Gameble {
+model Gamble {
   id          Int       @id @default(autoincrement())
   contractId  Int
   name        String
