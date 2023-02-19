@@ -1,101 +1,27 @@
 // Next.js API route support: https://nextjs.org/docs/api-routes/introduction
 import type { NextApiRequest, NextApiResponse } from "next"
 
-import { providers, Contract, Wallet, utils } from "ethers"
-
-import fs from "fs"
+import { utils } from "ethers"
 
 import * as ipfsClient from "ipfs-http-client"
 import proxy from "node-global-proxy"
 
-import http from "@/lib/rapidapi"
-import prisma from "@/lib/prisma"
+import { getFixtures, getOdds } from "#/lib/rapidapi"
+import prisma from "#/lib/prisma"
 import { Prisma } from "@prisma/client"
+
+import addresses from "#/address.json"
+import { core } from "#/lib/contract"
 
 import dateFormat from "dateformat"
 
-// type Data = {
-//     name: string
-// }
-
-async function getFixtures(
-    leagueApiId: number,
-    season: string,
-    date: string,
-): Promise<
-    {
-        fixture: {
-            id: number
-            timestamp: number
-        }
-        teams: {
-            home: {
-                id: number
-                name: string
-                logo: string
-            }
-            away: {
-                id: number
-                name: string
-                logo: string
-            }
-        }
-    }[]
-> {
-    // 获取联赛的比赛
-    const response = await http.get("/fixtures", {
-        params: {
-            league: leagueApiId,
-            status: "NS",
-            season,
-            date,
-        },
-    })
-
-    return response.data.response
-}
-
-async function getOdds(fixtureApiId: number): Promise<
-    {
-        name: string
-        values: {
-            value: string
-            odd: string
-        }[]
-    }[]
-> {
-    // 获取赔率
-    const response = await http.get("/odds", {
-        params: {
-            fixture: fixtureApiId,
-            bookmaker: 8, // bet365
-        },
-    })
-    // bookmakers:
-    //     id:1
-    //     name:"10Bet"
-    //     bets:
-    //         id:1
-    //         name:"Match Winner"
-    //         values:
-    //             value:"Home"
-    //             odd:"3.90"
-    //             value:"Draw"
-    //             odd:"3.45"
-    //             value:"Away"
-    //             odd:"2.00"
-
-    console.log(response.data)
-    return response.data.response[0].bookmakers[0].bets
-}
-
-export default async function handler(req: NextApiRequest, res: NextApiResponse<Data>) {
+export default async function handler(req: NextApiRequest, res: NextApiResponse) {
     // infura 的接口被墙
     // 所以本地调试需要设置代理
-    if (process.env.PROXY && process.env.NODE_ENV === "development") {
-        proxy.setConfig(process.env.PROXY)
-        proxy.start()
-    }
+    // if (process.env.PROXY && process.env.NODE_ENV === "development") {
+    //     proxy.setConfig(process.env.PROXY)
+    //     proxy.start()
+    // }
 
     const multiplier = 1e9
 
@@ -106,27 +32,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
         ).toString("base64")
 
     const client = ipfsClient.create({
-        host: "ipfs.infura.io",
-        port: 5001,
+        host: "betdog.infura-ipfs.io",
         protocol: "https",
+        // url: "https://betdog.infura-ipfs.io",
         headers: {
             authorization: auth,
         },
     })
-
-    const coreABI = JSON.parse(
-        fs.readFileSync("./abi/contracts/interfaces/ICore.sol/ICore.json", "utf8"),
-    )
-
-    const address = JSON.parse(fs.readFileSync("./address.json", "utf8"))
-
-    const { AlchemyProvider } = providers
-
-    const provider = new AlchemyProvider("maticmum", process.env["ALCHEMY_MUMBAI_KEY"])
-
-    const signer = new Wallet(process.env["PRIVATE_KEY"] as string, provider)
-
-    const core = new Contract(address["Core"], coreABI, signer)
 
     const leagues = await prisma.league.findMany()
 
@@ -154,6 +66,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
 
                     // js-multiformats
 
+                    console.log("upload to ipfs")
                     const result = await client.add(data, { pin: true })
 
                     // 2. 创建 game 至合约。
@@ -227,7 +140,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
                                 console.log(initialOdds)
                                 await (
                                     await core.createGamble(
-                                        address["TestToken"],
+                                        addresses.TestToken,
                                         gameId,
                                         bet.name,
                                         outcomes,
@@ -243,6 +156,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
                                         outcomes,
                                         gameId: game.id,
                                         initialOdds,
+                                        betId: 1,
                                     },
                                 })
                             },
@@ -258,9 +172,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
         }
     }
 
-    if (process.env.PROXY && process.env.NODE_ENV === "development") {
-        proxy.stop()
-    }
+    // if (process.env.PROXY && process.env.NODE_ENV === "development") {
+    //     proxy.stop()
+    // }
 
     res.status(200).json({})
 }

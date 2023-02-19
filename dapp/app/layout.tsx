@@ -1,5 +1,5 @@
+"use client"
 import "../styles/globals.css"
-import type { AppProps } from "next/app"
 
 import { ApolloProvider } from "@apollo/client"
 import apolloClient from "../lib/apollo"
@@ -8,7 +8,7 @@ import { WagmiConfig, createClient, configureChains } from "wagmi"
 import { polygonMumbai } from "wagmi/chains"
 import { publicProvider } from "wagmi/providers/public"
 
-export default function App({ Component, pageProps }: AppProps) {
+export default function Layout({ children }: { children: React.ReactNode }) {
     // return <Component {...pageProps} />
 
     const { chains, provider, webSocketProvider } = configureChains(
@@ -22,10 +22,12 @@ export default function App({ Component, pageProps }: AppProps) {
         webSocketProvider,
     })
     return (
-        <ApolloProvider client={apolloClient}>
-            <WagmiConfig client={client}>
-                <Component {...pageProps} />
-            </WagmiConfig>
-        </ApolloProvider>
+        <html lang="en">
+            <body>
+                <ApolloProvider client={apolloClient}>
+                    <WagmiConfig client={client}>{children}</WagmiConfig>
+                </ApolloProvider>
+            </body>
+        </html>
     )
 }

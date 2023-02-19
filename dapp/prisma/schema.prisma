@@ -68,6 +68,8 @@ model Game {
 model Gamble {
   id          Int       @id @default(autoincrement())
   contractId  Int
+  bet         Bet       @relation(fields: [betId], references: [id])
+  betId       Int
   name        String
   game        Game      @relation(fields: [gameId], references: [id])
   gameId      Int
@@ -79,6 +81,13 @@ model Bookmaker {
   id    Int    @id @default(autoincrement())
   name  String
   apiId Int    @unique
+}
+
+model Bet {
+  id     Int      @id @default(autoincrement())
+  name   String
+  apiId  Int      @unique
+  Gamble Gamble[]
 }
 
 model Country {

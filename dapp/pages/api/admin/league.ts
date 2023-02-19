@@ -1,35 +1,8 @@
 // Next.js API route support: https://nextjs.org/docs/api-routes/introduction
 import type { NextApiRequest, NextApiResponse } from "next"
 
-import prisma from "@/lib/prisma"
-import http from "@/lib/rapidapi"
-
-async function getLeague(leagueId: number): Promise<{
-    league: {
-        id: number
-        name: string
-        type: string
-        logo: string
-    }
-    country: {
-        name: string
-        code: string
-        flag: string
-    }
-}> {
-    // 获取联赛的比赛
-    const response = await http.get("/leagues", {
-        params: {
-            id: leagueId,
-        },
-    })
-
-    if (response.data.response.length == 0) {
-        throw Error()
-    }
-
-    return response.data.response[0]
-}
+import prisma from "#/lib/prisma"
+import { getLeagueById } from "#/lib/rapidapi"
 
 // league:
 // id:135
@@ -45,7 +18,7 @@ async function getLeague(leagueId: number): Promise<{
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
     if (req.method === "POST") {
         const sportId = req.body.sportId
-        const leagueData = await getLeague(req.body.leagueId)
+        const leagueData = await getLeagueById(req.body.apiId)
 
         const league = await prisma.league.upsert({
             where: {
