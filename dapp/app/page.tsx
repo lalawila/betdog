@@ -1,11 +1,11 @@
-"use client"
+'use client'
 
-import Head from "next/head"
+import Head from 'next/head'
 
-import { useQuery } from "@apollo/client"
-import { graphql } from "../gql"
+import { useQuery } from '@apollo/client'
+import { graphql } from '../gql'
 
-import { utils } from "ethers"
+import { utils } from 'ethers'
 
 import {
     useAccount,
@@ -14,22 +14,22 @@ import {
     useContractWrite,
     useDisconnect,
     usePrepareContractWrite,
-} from "wagmi"
-import { InjectedConnector } from "wagmi/connectors/injected"
+} from 'wagmi'
+import { InjectedConnector } from 'wagmi/connectors/injected'
 
-import addresses from "#/address.json"
-import coreABI from "#/abi/contracts/interfaces/ICore.sol/ICore.json"
-import { erc20ABI } from "wagmi"
-import { waitForTransaction } from "@wagmi/core"
+import addresses from '#/address.json'
+import coreABI from '#/abi/contracts/interfaces/ICore.sol/ICore.json'
+import { erc20ABI } from 'wagmi'
+import { waitForTransaction } from '@wagmi/core'
 
-import { useEffect } from "react"
+import { useEffect } from 'react'
 
 function Balance() {
     const { address } = useAccount()
     const { data: balance } = useContractRead({
         address: addresses.TestToken as `0x${string}`,
         abi: erc20ABI,
-        functionName: "balanceOf",
+        functionName: 'balanceOf',
         args: [address as `0x${string}`],
     })
     return <h1>{balance?.toString()}</h1>
@@ -85,25 +85,24 @@ export default function Home() {
         write: approve,
         isSuccess,
     } = useContractWrite({
-        mode: "recklesslyUnprepared",
+        mode: 'recklesslyUnprepared',
         address: addresses.TestToken as `0x${string}`,
         abi: erc20ABI,
-        functionName: "approve",
-        args: [addresses.Core as `0x${string}`, utils.parseEther("1")],
+        functionName: 'approve',
+        args: [addresses.Core as `0x${string}`, utils.parseEther('1')],
     })
 
     const { write: bet } = useContractWrite({
-        mode: "recklesslyUnprepared",
+        mode: 'recklesslyUnprepared',
         address: addresses.Core as `0x${string}`,
         abi: coreABI,
-        functionName: "bet",
-        args: [13, 0, utils.parseEther("1")],
+        functionName: 'bet',
+        args: [13, 0, utils.parseEther('1')],
     })
 
     useEffect(() => {
         async function fetchData() {
             if (transition?.hash) {
-                console.log("1231313")
                 await waitForTransaction({
                     hash: transition?.hash,
                 })
@@ -120,7 +119,6 @@ export default function Home() {
     return (
         <>
             <Profile />
-
             {data?.games.map((game) => (
                 <div key={game.id}>
                     <h1>
