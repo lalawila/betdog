@@ -1,20 +1,66 @@
 'use client'
 
 import Link from 'next/link'
-import { useSelectedLayoutSegment } from 'next/navigation'
+import { useSelectedLayoutSegment, useSelectedLayoutSegments } from 'next/navigation'
 import clsx from 'clsx'
 import { ReactNode, useState } from 'react'
 import { Logo } from './icons/Logo'
 import { Game } from './icons/Game'
 import { Football } from './icons/Football'
 
+const items = [
+    {
+        icon: <Logo />,
+        name: 'Home',
+        slug: '',
+    },
+    {
+        icon: <Football />,
+        name: 'Sport',
+        slug: 'sport',
+        subitems: [
+            {
+                icon: <Football />,
+                name: 'Football',
+                slug: 'football',
+            },
+            {
+                icon: <Game />,
+                name: 'Basketball',
+                slug: 'basketball',
+            },
+        ],
+    },
+    {
+        icon: <Game />,
+        name: 'Esport',
+        slug: 'esport',
+        subitems: [
+            {
+                icon: <Football />,
+                name: 'Dota2',
+                slug: 'dota2',
+            },
+            {
+                icon: <Game />,
+                name: 'LOL',
+                slug: 'lol',
+            },
+        ],
+    },
+]
+
 export function GlobalNav() {
     const [isOpen, setIsOpen] = useState(false)
     const close = () => setIsOpen(false)
 
+    const segment = useSelectedLayoutSegment()
+
+    const subitems = items.find((item) => item.slug === segment)?.subitems
+
     return (
-        <div className="fixed top-0 z-10 flex w-full flex-col border-b border-gray-800 bg-black lg:bottom-0 lg:z-auto lg:w-72 lg:border-r lg:border-gray-800">
-            <div className="flex h-14 items-center py-4 px-4 lg:h-auto">
+        <div className="flex w-full flex-col border-b border-gray-800 bg-black lg:bottom-0 lg:z-auto lg:w-72 lg:border-r lg:border-gray-800">
+            <div className="flex h-14 items-center border-b border-gray-800 py-4 px-4 lg:h-auto ">
                 <Link href="/" className="group flex w-full items-center gap-x-2.5" onClick={close}>
                     <div className="h-7 w-7 fill-white">
                         <Logo />
@@ -41,15 +87,30 @@ export function GlobalNav() {
                     hidden: !isOpen,
                 })}
             >
-                <nav className="space-y-6 px-2 py-5">
-                    <GlobalNavItem icon={<Logo />} name={'Home'} slug={'home'} close={close} />
-                    <GlobalNavItem
-                        icon={<Football />}
-                        name={'Sport'}
-                        slug={'sport'}
-                        close={close}
-                    />
-                    <GlobalNavItem icon={<Game />} name={'Esport'} slug={'esport'} close={close} />
+                <nav className="flex px-2 py-5">
+                    <div>
+                        {items.map((item) => (
+                            <GlobalNavItem
+                                key={item.slug}
+                                icon={item.icon}
+                                name={item.name}
+                                slug={item.slug}
+                                close={close}
+                            />
+                        ))}
+                    </div>
+                    {segment !== 'home' && (
+                        <div>
+                            {subitems?.map((item) => (
+                                <GlobalNavSubItem
+                                    key={item.slug}
+                                    icon={item.icon}
+                                    name={item.name}
+                                    slug={item.slug}
+                                />
+                            ))}
+                        </div>
+                    )}
                 </nav>
             </div>
         </div>
@@ -76,7 +137,37 @@ function GlobalNavItem({
                 onClick={close}
                 href={`/${slug}`}
                 className={clsx(
-                    'group flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium',
+                    'group flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium hover:text-white',
+                    {
+                        'text-gray-400 hover:bg-gray-800': !isActive,
+                        'text-white': isActive,
+                    },
+                )}
+            >
+                <div
+                    className={clsx('h-7 w-7', {
+                        'fill-gray-400 group-hover:fill-white': !isActive,
+                        'fill-white': isActive,
+                    })}
+                >
+                    {icon}
+                </div>
+                {segment === null && <span>{name}</span>}
+            </Link>
+        </>
+    )
+}
+
+function GlobalNavSubItem({ icon, name, slug }: { icon: ReactNode; name: string; slug: string }) {
+    const segments = useSelectedLayoutSegments()
+    const isActive = slug === segments[1]
+
+    return (
+        <>
+            <Link
+                href={`/${segments[0]}/${slug}`}
+                className={clsx(
+                    'group flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium hover:text-white',
                     {
                         'text-gray-400 hover:bg-gray-800': !isActive,
                         'text-white': isActive,
