@@ -1,5 +1,4 @@
 'use client'
-import '../styles/globals.css'
 
 import { ApolloProvider } from '@apollo/client'
 import apolloClient from '../lib/apollo'
@@ -12,6 +11,8 @@ import { GlobalMenu } from '#/ui/GlobalMenu'
 import { ConnectButton } from '#/ui/ConnectButton'
 
 import { GlobalContextProvider } from '#/contexts/globalContext'
+
+import '../styles/globals.css'
 
 export default function Layout({ children }: { children: React.ReactNode }) {
     const { chains, provider, webSocketProvider } = configureChains(

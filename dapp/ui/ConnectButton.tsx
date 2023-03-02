@@ -1,3 +1,6 @@
+'use client'
+
+import { useEffect, useState } from 'react'
 import { useAccount, useConnect, useDisconnect } from 'wagmi'
 import { InjectedConnector } from 'wagmi/connectors/injected'
 
@@ -8,8 +11,13 @@ export function ConnectButton() {
     })
     const { disconnect } = useDisconnect()
 
+    const [isSSR, setIsSsr] = useState(true)
+    useEffect(() => setIsSsr(false))
+
+    if (isSSR) return null
+
     if (isConnected) {
-        return <h1>{address?.substring(0, 8)}...</h1>
+        return <div onClick={() => disconnect()}>{address?.substring(0, 8)}...</div>
     } else {
         return (
             <div

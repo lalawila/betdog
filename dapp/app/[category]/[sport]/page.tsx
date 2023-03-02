@@ -5,15 +5,7 @@ import { graphql } from '#/gql'
 
 import { utils } from 'ethers'
 
-import {
-    useAccount,
-    useConnect,
-    useContractRead,
-    useContractWrite,
-    useDisconnect,
-    usePrepareContractWrite,
-} from 'wagmi'
-import { InjectedConnector } from 'wagmi/connectors/injected'
+import { useAccount, useContractRead, useContractWrite } from 'wagmi'
 
 import addresses from '#/address.json'
 import coreABI from '#/abi/contracts/interfaces/ICore.sol/ICore.json'
@@ -31,24 +23,6 @@ function Balance() {
         args: [address as `0x${string}`],
     })
     return <h1>{balance?.toString()}</h1>
-}
-
-function Profile() {
-    const { address, isConnected } = useAccount()
-    const { connect } = useConnect({
-        connector: new InjectedConnector(),
-    })
-    const { disconnect } = useDisconnect()
-
-    if (isConnected)
-        return (
-            <div>
-                Connected to {address}
-                <button onClick={() => disconnect()}>Disconnect</button>
-                <Balance />
-            </div>
-        )
-    return <button onClick={() => connect()}>Connect Wallet</button>
 }
 
 const AllGamesQuery = graphql(`
@@ -76,7 +50,6 @@ const AllGamesQuery = graphql(`
 
 function Main() {
     const { data, loading, error } = useQuery(AllGamesQuery)
-    console.log(data)
 
     const {
         data: transition,
@@ -114,24 +87,23 @@ function Main() {
     if (error) return <div>failed to load</div>
     if (loading) return <div>loading...</div>
 
+    const odds = []
+
     return (
         <>
-            <Profile />
             {data?.games.map((game) => (
                 <div key={game.id}>
-                    <h1>
-                        {game.home.name} vs {game.away.name}
-                    </h1>
-                    {game.gambles.map((gamble) => (
-                        <div key={gamble.id}>
-                            <h3>{gamble.name}</h3>
-                            {gamble.outcomes.map((outcome) => (
-                                <button key={outcome} onClick={() => approve()}>
-                                    {outcome}
-                                </button>
-                            ))}
+                    <div>
+                        <div>
+                            {game.home.name} vs {game.away.name}
                         </div>
-                    ))}
+
+                        {game.gambles
+                            .find((gamble) => gamble.name === 'Match Winner')
+                            ?.outcomes.map((outcome) => {
+                                return <span>{outcome}</span>
+                            })}
+                    </div>
                 </div>
             ))}
         </>
